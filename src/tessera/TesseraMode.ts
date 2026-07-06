@@ -23,8 +23,15 @@ export class TesseraMode implements Mode {
   private pools: InstancePools;
   private sun: THREE.DirectionalLight;
   private animatables: { update(dt: number): void }[] = [];
+  /** Incremented on every placement change (robots re-sync off this). */
+  layoutVersion = 0;
   /** Fired after any placement change (for autosave + HUD). */
   onLayoutChanged: (() => void) | null = null;
+
+  private notifyLayoutChanged(): void {
+    this.layoutVersion++;
+    this.onLayoutChanged?.();
+  }
 
   constructor(private app: App, gridSize = DEFAULT_GRID) {
     this.grid = new Grid(gridSize, gridSize);
@@ -115,7 +122,7 @@ export class TesseraMode implements Mode {
     const index = this.grid.place(def, placed);
     this.spawnGroup(index, placed);
     this.rebuildInstances();
-    this.onLayoutChanged?.();
+    this.notifyLayoutChanged();
     return index;
   }
 
@@ -133,7 +140,7 @@ export class TesseraMode implements Mode {
       this.moduleGroups.delete(index);
     }
     this.rebuildInstances();
-    this.onLayoutChanged?.();
+    this.notifyLayoutChanged();
     return placed;
   }
 
@@ -142,7 +149,7 @@ export class TesseraMode implements Mode {
     this.grid.restore(def, index, placed);
     this.spawnGroup(index, placed);
     this.rebuildInstances();
-    this.onLayoutChanged?.();
+    this.notifyLayoutChanged();
   }
 
   clearAll(): void {
@@ -154,7 +161,7 @@ export class TesseraMode implements Mode {
     }
     this.moduleGroups.clear();
     this.rebuildInstances();
-    this.onLayoutChanged?.();
+    this.notifyLayoutChanged();
   }
 
   loadPlacements(placements: PlacedModule[]): void {
@@ -173,7 +180,7 @@ export class TesseraMode implements Mode {
       this.spawnGroup(index, p);
     }
     this.rebuildInstances();
-    this.onLayoutChanged?.();
+    this.notifyLayoutChanged();
   }
 
   placementWorldMatrix(placed: PlacedModule): THREE.Matrix4 {

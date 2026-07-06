@@ -13,6 +13,8 @@ import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
 import { ArcologyMode } from './arcology/ArcologyMode';
 import { ArcologyPanel } from './ui/ArcologyPanel';
+import { Robots } from './tessera/Robots';
+import { Clouds } from './tessera/Clouds';
 
 const params = new URLSearchParams(location.search);
 
@@ -162,6 +164,8 @@ function updateHint(): void {
 updateHint();
 
 tessera.registerAnimatable({ update: (dt) => walkthrough.update(dt) });
+tessera.registerAnimatable(new Robots(tessera));
+tessera.registerAnimatable(new Clouds(tessera.scene));
 
 // ---- boot layout -----------------------------------------------------------
 tessera.onLayoutChanged = () => persistence.scheduleAutosave();
