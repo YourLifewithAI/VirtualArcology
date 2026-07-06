@@ -1,0 +1,283 @@
+:root {
+  --panel-bg: rgba(18, 24, 28, 0.88);
+  --panel-border: rgba(127, 176, 105, 0.35);
+  --text: #e8e4d8;
+  --text-dim: #9fae9b;
+  --accent: #7fb069;
+  --accent-warm: #e8b23a;
+  --danger: #e0523e;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+#ui-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  color: var(--text);
+  font-size: 13px;
+  z-index: 10;
+}
+
+#ui-root * {
+  box-sizing: border-box;
+}
+
+/* ---- toolbar ---- */
+.va-toolbar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 6px 8px;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+}
+
+.va-toolbar .va-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--panel-border);
+  margin: 0 2px;
+}
+
+.va-btn {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.va-btn:hover {
+  border-color: var(--panel-border);
+  background: rgba(127, 176, 105, 0.12);
+}
+
+.va-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+  background: transparent;
+  border-color: transparent;
+}
+
+.va-btn.active {
+  background: rgba(127, 176, 105, 0.25);
+  border-color: var(--accent);
+}
+
+.va-btn.warm {
+  color: var(--accent-warm);
+}
+
+/* ---- palette ---- */
+.va-palette {
+  position: absolute;
+  top: 64px;
+  left: 12px;
+  bottom: 12px;
+  width: 232px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  overflow-y: auto;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  scrollbar-width: thin;
+}
+
+.va-palette h2 {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin: 14px 12px 6px;
+}
+
+.va-palette h2:first-child {
+  margin-top: 12px;
+}
+
+.va-module-btn {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: calc(100% - 16px);
+  margin: 2px 8px;
+  padding: 7px 9px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+}
+
+.va-module-btn:hover {
+  background: rgba(127, 176, 105, 0.12);
+  border-color: var(--panel-border);
+}
+
+.va-module-btn.selected {
+  background: rgba(127, 176, 105, 0.28);
+  border-color: var(--accent);
+}
+
+.va-module-btn .fp {
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+/* ---- hud ---- */
+.va-hud {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  pointer-events: auto;
+  font-size: 12px;
+  color: var(--text-dim);
+  max-width: 320px;
+  backdrop-filter: blur(6px);
+}
+
+.va-hud .stats {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.va-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 7px 14px;
+  color: var(--text-dim);
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.va-hint b {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* ---- crosshair + walk overlay ---- */
+.va-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 4px;
+  height: 4px;
+  margin: -2px 0 0 -2px;
+  border-radius: 50%;
+  background: rgba(232, 228, 216, 0.9);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.7);
+  display: none;
+}
+
+.va-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 18, 0.55);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.va-overlay .card {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  padding: 22px 30px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.va-overlay .card b {
+  color: var(--accent);
+}
+
+/* ---- toast ---- */
+.va-toast {
+  position: absolute;
+  top: 64px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--panel-bg);
+  border: 1px solid var(--accent-warm);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+
+.va-toast.show {
+  opacity: 1;
+}
+
+/* ---- lil-gui (arcology params) ---- */
+.lil-gui.autoPlace {
+  top: 64px;
+  right: 12px;
+  max-height: calc(100% - 150px);
+}
+
+/* ---- legend (arcology) ---- */
+.va-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  pointer-events: auto;
+  font-size: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.va-legend h3 {
+  margin: 4px 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.va-legend .row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 3px 0;
+}
+
+.va-legend .swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex: none;
+}
