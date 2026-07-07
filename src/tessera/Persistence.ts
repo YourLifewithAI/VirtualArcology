@@ -39,6 +39,9 @@ export class Persistence {
   }
 
   applyLayout(layout: TesseraLayout): void {
+    if (layout.grid.width !== this.mode.grid.width || layout.grid.depth !== this.mode.grid.depth) {
+      this.mode.resizeGrid(layout.grid.width, layout.grid.depth);
+    }
     this.mode.loadPlacements(layout.modules);
   }
 

@@ -41,9 +41,16 @@ export class InstancePools {
       mesh.count = matrices.length;
       for (let i = 0; i < matrices.length; i++) mesh.setMatrixAt(i, matrices[i]);
       mesh.instanceMatrix.needsUpdate = true;
-      mesh.visible = matrices.length > 0;
+      mesh.visible = !this.hidden && matrices.length > 0;
     }
   }
+
+  /** Hide/show all pools (utility x-ray view). */
+  setVisible(v: boolean): void {
+    this.hidden = !v;
+    for (const mesh of this.meshes.values()) mesh.visible = v && mesh.count > 0;
+  }
+  private hidden = false;
 
   dispose(): void {
     for (const mesh of this.meshes.values()) {
