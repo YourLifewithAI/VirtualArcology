@@ -14,6 +14,7 @@ import { clearInstancedPartCache } from '../catalog/parts';
 import { BiomeLayer } from './BiomeLayer';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
+import { RoadNetwork } from './RoadNetwork';
 import { UtilityNetwork } from './UtilityNetwork';
 
 export const DEFAULT_GRID = 56;
@@ -28,11 +29,14 @@ export class TesseraMode implements Mode {
   private hemi: THREE.HemisphereLight;
   private groundMeshes: THREE.Object3D[] = [];
   private utilities: UtilityNetwork;
+  private roads: RoadNetwork;
   private biomes: BiomeLayer;
   /** Active regional archetype (BIOMES key). */
   biome = 'temperate';
   /** True while the underground-infrastructure x-ray view is active. */
   utilityView = false;
+  /** True while the street-connectivity overlay is active. */
+  roadView = false;
   private ghostMat = new THREE.MeshBasicMaterial({
     color: 0xbcd4e6,
     transparent: true,
@@ -48,6 +52,7 @@ export class TesseraMode implements Mode {
   private notifyLayoutChanged(): void {
     this.layoutVersion++;
     if (this.utilityView) this.utilities.setVisible(true);
+    if (this.roadView) this.roads.setVisible(true);
     this.onLayoutChanged?.();
   }
 
@@ -55,6 +60,7 @@ export class TesseraMode implements Mode {
     this.grid = new Grid(gridSize, gridSize);
     this.pools = new InstancePools(this.scene);
     this.utilities = new UtilityNetwork(this);
+    this.roads = new RoadNetwork(this);
 
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
@@ -168,6 +174,17 @@ export class TesseraMode implements Mode {
   /** Building-utility pairs that couldn't reach their plant (valid while pipes view is on). */
   get serviceAlerts(): number {
     return this.utilities.unconnected;
+  }
+
+  /** Street connectivity overlay (teal = on the transit network, red = island). */
+  setRoadView(on: boolean): void {
+    this.roadView = on;
+    this.roads.setVisible(on);
+  }
+
+  /** Valid while the road view is on. */
+  get roadStats(): { disconnected: number; total: number } {
+    return { disconnected: this.roads.disconnected, total: this.roads.totalStreets };
   }
 
   /** Replace the site with an empty grid of the given cell dimensions. */

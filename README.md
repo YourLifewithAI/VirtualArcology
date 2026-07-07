@@ -35,14 +35,21 @@ The app opens on a demo neighborhood. Build your own:
 | **Tab** or 🚶 Walk | Enter first-person walkthrough |
 | Drag / scroll | Orbit / zoom |
 
-The palette covers 44 modules: housing (including the **Agent House**,
+The palette covers 45 modules: housing (including the **Agent House**,
 civic quarters for embodied AI citizens), civic space (school, emergency
 services, pools, venue, grocery, library...), food production (greenhouses,
 vertical farms, RAS fishery, mycology), energy (solar, batteries,
 substation, SMR), the full chip-fab support chain, a robotics fab and
 materials-recovery foundry, compute, logistics (including the rail + bus
-**Transit Hub**) and streetscape. Delivery robots route themselves over any
-`Street` modules you lay down.
+**Transit Hub** and the **AV Shuttle Depot**) and streetscape.
+
+Streets are functional, not decorative: delivery robots BFS-route over any
+`Street` modules you lay down, and six-seater autonomous shuttles run
+scheduled loops between AV depots and the transit hub — the mass-transit
+system an arcology needs, planted at neighborhood scale. Shuttles only run
+where the street network actually connects, and the **Roads** toolbar
+toggle shows exactly that: teal streets reach the transit network, red
+streets are islands (with a toast tallying the gaps).
 
 **Click any placed building** to inspect its purpose and lore — then Move,
 Rotate, or Remove it, or open the **⚡ Utilities** tab for its energy, compute
@@ -104,7 +111,8 @@ extracted from the Arcology Knowledge Node at lifewithai.ai.
 `?mode=arcology` · `?demo=1` (bundled layout) · `?empty=1` (blank site) ·
 `?xray=1` · `?shafts=1` · `?cut=0.45` (cutaway fraction) · `?freeze=1`
 (pause ambient animation) · `?theme=neon-night` (architectural theme) ·
-`?biome=desert` (regional archetype) · `?pipes=1` (underground view)
+`?biome=desert` (regional archetype) · `?pipes=1` (underground view) ·
+`?roads=1` (street-connectivity overlay)
 
 ## Deploying to GitHub Pages
 

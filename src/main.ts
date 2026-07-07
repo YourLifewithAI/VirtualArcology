@@ -23,6 +23,7 @@ import { GridCollision } from './walkthrough/GridCollision';
 import { ArcologyMode } from './arcology/ArcologyMode';
 import { ArcologyPanel } from './ui/ArcologyPanel';
 import { Robots } from './tessera/Robots';
+import { Shuttles } from './tessera/Shuttles';
 import { Clouds } from './tessera/Clouds';
 
 const params = new URLSearchParams(location.search);
@@ -220,6 +221,20 @@ const toolbar = new Toolbar(uiRoot, {
     }
     return tessera.utilityView;
   },
+  toggleRoads: () => {
+    tessera.setRoadView(!tessera.roadView);
+    if (tessera.roadView) {
+      const { disconnected, total } = tessera.roadStats;
+      hud.showToast(
+        disconnected > 0
+          ? `${disconnected} of ${total} street tiles can't reach the transit network — shown in red`
+          : total > 0
+            ? 'All streets connected to the transit network'
+            : 'No streets yet — lay some down first',
+      );
+    }
+    return tessera.roadView;
+  },
   newSite: () => {
     if (walkthrough.state !== 'off') walkthrough.exit();
     placement.select(null);
@@ -268,6 +283,7 @@ updateHint();
 
 tessera.registerAnimatable({ update: (dt) => walkthrough.update(dt) });
 tessera.registerAnimatable(new Robots(tessera));
+tessera.registerAnimatable(new Shuttles(tessera));
 tessera.registerAnimatable(new Clouds(tessera.scene));
 
 // ---- boot layout -----------------------------------------------------------
@@ -290,6 +306,7 @@ if (params.get('empty') === '1') {
 }
 placement.resetHistory();
 if (params.get('pipes') === '1') tessera.setUtilityView(true);
+if (params.get('roads') === '1') tessera.setRoadView(true);
 
 if (params.get('mode') === 'arcology') {
   const arc = ensureArcology();

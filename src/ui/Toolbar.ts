@@ -9,6 +9,7 @@ export interface ToolbarActions {
   toggleGrid(): void;
   toggleLedger(): void;
   togglePipes(): boolean;
+  toggleRoads(): boolean;
   newSite(): void;
   cycleTheme(): void;
   cycleBiome(): void;
@@ -56,6 +57,9 @@ export class Toolbar {
     add('pipes', 'Pipes', () => {
       this.btns.pipes.classList.toggle('active', actions.togglePipes());
     }, 'Underground infrastructure view — services route to their plants; red = not connected');
+    add('roads', 'Roads', () => {
+      this.btns.roads.classList.toggle('active', actions.toggleRoads());
+    }, 'Street connectivity — teal streets reach the transit network, red are islands');
     add('new', 'New site', () => actions.newSite(), 'Drag out a fresh site footprint');
     sep();
     add('theme', '🎨 Theme', () => actions.cycleTheme(), 'Cycle architectural theme (rebuilds every placed module)');
@@ -78,7 +82,7 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
+    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
       this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();

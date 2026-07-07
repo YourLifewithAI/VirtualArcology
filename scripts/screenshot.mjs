@@ -44,6 +44,11 @@ const SCENARIOS = [
     budgets: { maxDrawCalls: 1700, maxTriangles: 2_500_000, minTriangles: 1_000 },
   },
   {
+    name: 'tessera-roads',
+    url: `/?mode=tessera&demo=1&freeze=1&roads=1`,
+    budgets: { maxDrawCalls: 1750, maxTriangles: 2_600_000, minTriangles: 1_000 },
+  },
+  {
     name: 'arcology',
     url: `/?mode=arcology&freeze=1`,
     budgets: { maxDrawCalls: 400, maxTriangles: 4_000_000, minTriangles: 1_000 },

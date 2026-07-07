@@ -193,6 +193,12 @@ export const LORE: Record<string, ModuleLore> = {
     contributes:
       'Home base for the robots threading the street lattice. Watch the streets: everything they carry, a resident didn’t have to drive.',
   },
+  'av-depot': {
+    purpose:
+      'A charging plaza for six-seater autonomous shuttles: glowing bays under a solar canopy, a small ops kiosk, and pods pulling in and out all day.',
+    contributes:
+      'Mass transit, planted early. A Tessera can walk everywhere; an arcology cannot — so the shuttle network is designed in from the ground up, growing depot by depot until it hands off to the vertical transport spine. Shuttles only run where streets actually connect.',
+  },
   'water-tower': {
     purpose:
       'An elevated tank and treatment shed keeping the Tessera’s taps pressurized — gravity as the cheapest battery there is.',

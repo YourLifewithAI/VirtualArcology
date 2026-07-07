@@ -172,5 +172,53 @@ const transitHub: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [logisticsHub, robotDepot, waterTower, transitHub];
+/** Parked six-seater AV pod — same design language as the animated fleet. */
+function parkedPod(b: PartsBuilder, x: number, z: number): void {
+  b.box(2.0, 1.15, 4.4, 'industryWhite', { x, z, y: 0.45 });
+  b.box(1.85, 0.75, 3.3, 'windowDark', { x, z, y: 1.6 });
+  b.box(2.0, 0.14, 4.2, 'robotTeal', { x, z, y: 2.35 });
+  for (const [wx, wz] of [[-0.85, -1.5], [0.85, -1.5], [-0.85, 1.5], [0.85, 1.5]] as const) {
+    b.cyl(0.32, 0.45, 'charcoal', { x: x + wx, z: z + wz, y: 0 }, 8);
+  }
+}
+
+const avDepot: ModuleDef = {
+  id: 'av-depot',
+  name: 'AV Shuttle Depot',
+  category: 'logistics',
+  description: 'Charging plaza for six-seater autonomous shuttles — the seed of the mass-transit system',
+  footprint: { w: 2, d: 2 },
+  height: 5,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 2, 2, 'concreteDark');
+    // charging canopy along the north half: timber roof on posts + solar
+    b.box(17, 0.4, 8.5, 'cream', { z: -4.5, y: 4.0 });
+    solarRoof(b, 14, 6.5, 4.4, { z: -4.5 });
+    for (const [px, pz] of [[-8, -8.2], [0, -8.2], [8, -8.2], [-8, -0.8], [8, -0.8]] as const) {
+      b.box(0.35, 4.0, 0.35, 'timberDark', { x: px, z: pz, y: 0 });
+    }
+    // four charging bays: emissive floor strips, bollards, parked pods
+    for (let i = 0; i < 4; i++) {
+      const x = -6.3 + i * 4.2;
+      b.hquad(2.8, 6, 'robotTeal', { x, z: -4.3, y: 0.16, layer: 'emissive' });
+      b.box(0.3, 1.1, 0.3, 'steelDark', { x: x - 1.5, z: -7.6, y: 0.12 });
+      b.box(0.34, 0.18, 0.34, 'robotTeal', { x: x - 1.5, z: -7.6, y: 1.22, layer: 'emissive' });
+      if (rng.chance(0.75)) parkedPod(b, x, -4.3);
+    }
+    // ops kiosk with a lit window + totem sign
+    b.box(4, 2.6, 3, 'cream', { x: 6.5, z: 5.5, y: 0.12 });
+    b.box(4.3, 0.35, 3.3, 'timberDark', { x: 6.5, z: 5.5, y: 2.72 });
+    b.quad(2.2, 1, 'windowLit', { x: 6.5, z: 3.98, y: 1.1, layer: 'emissive' });
+    b.box(0.5, 4.6, 0.5, 'steelDark', { x: -8.5, z: 6.5, y: 0.12 });
+    b.quad(1.6, 1.6, 'robotTeal', { x: -8.5, z: 6.35, y: 2.8, layer: 'emissive' });
+    // pull-through lane markings toward the street
+    b.hquad(14, 0.2, 'safetyAmber', { z: 2.2, y: 0.14 });
+    b.instance('shrub', -6.5, 0.12, 6.5, 0, rng.float(0.9, 1.3));
+    b.instance('shrub', 1.5, 0.12, 7.5, 0, rng.float(0.9, 1.3));
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [logisticsHub, robotDepot, avDepot, waterTower, transitHub];
 export default modules;
