@@ -45,9 +45,18 @@ materials-recovery foundry, compute, logistics (including the rail + bus
 `Street` modules you lay down.
 
 **Click any placed building** to inspect its purpose and lore — then Move,
-Rotate, or Remove it. The **Ledger** toolbar button shows live economics of
-everything placed (population, jobs, energy, compute, food coverage, capex),
-sourced from [`docs/tessera-economics.md`](docs/tessera-economics.md).
+Rotate, or Remove it, or open the **⚡ Utilities** tab for its energy, compute
+(residents modeled as AI power users), water and wastewater detail. The
+**Ledger** toolbar button shows live economics of everything placed (site
+area, population, jobs, energy, compute, water balance, food coverage,
+capex), sourced from [`docs/tessera-economics.md`](docs/tessera-economics.md).
+
+**Pipes** toggles the underground-infrastructure x-ray: power, water, sewer
+and fiber trunks under every street, with service stubs to each building.
+**New site** lets you drag out a fresh footprint (live m² readout) — the
+demo neighborhood is preplanned, but new builds start with your own site
+boundary, and saved layouts carry their footprint with them. A compass sits
+top-right so north stays findable.
 
 **Save/Load** exports the layout as JSON (and autosaves to your browser).
 

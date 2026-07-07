@@ -12,6 +12,7 @@ import { buildModuleGroup, type InstanceRequest } from '../core/geo';
 import { getModule } from '../catalog/ModuleCatalog';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
+import { UtilityNetwork } from './UtilityNetwork';
 
 export const DEFAULT_GRID = 56;
 
@@ -22,6 +23,16 @@ export class TesseraMode implements Mode {
   private moduleGroups = new Map<number, THREE.Group>();
   private pools: InstancePools;
   private sun: THREE.DirectionalLight;
+  private groundMeshes: THREE.Object3D[] = [];
+  private utilities: UtilityNetwork;
+  /** True while the underground-infrastructure x-ray view is active. */
+  utilityView = false;
+  private ghostMat = new THREE.MeshBasicMaterial({
+    color: 0xbcd4e6,
+    transparent: true,
+    opacity: 0.09,
+    depthWrite: false,
+  });
   private animatables: { update(dt: number): void }[] = [];
   /** Incremented on every placement change (robots re-sync off this). */
   layoutVersion = 0;
@@ -30,12 +41,14 @@ export class TesseraMode implements Mode {
 
   private notifyLayoutChanged(): void {
     this.layoutVersion++;
+    if (this.utilityView) this.utilities.setVisible(true);
     this.onLayoutChanged?.();
   }
 
   constructor(private app: App, gridSize = DEFAULT_GRID) {
     this.grid = new Grid(gridSize, gridSize);
     this.pools = new InstancePools(this.scene);
+    this.utilities = new UtilityNetwork(this);
 
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
@@ -61,8 +74,17 @@ export class TesseraMode implements Mode {
     this.buildGround(gridSize);
   }
 
-  private buildGround(gridSize: number): void {
-    const site = gridSize * CELL_SIZE;
+  private buildGround(gridW: number, gridD = gridW): void {
+    for (const m of this.groundMeshes) {
+      this.scene.remove(m);
+      if (m instanceof THREE.Mesh || m instanceof THREE.LineSegments) {
+        m.geometry.dispose();
+        (m.material as THREE.Material).dispose();
+      }
+    }
+    this.groundMeshes = [];
+    const siteW = gridW * CELL_SIZE;
+    const siteD = gridD * CELL_SIZE;
 
     const meadow = new THREE.Mesh(
       new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2),
@@ -73,19 +95,80 @@ export class TesseraMode implements Mode {
     this.scene.add(meadow);
 
     const slab = new THREE.Mesh(
-      new THREE.BoxGeometry(site + 8, 0.2, site + 8),
+      new THREE.BoxGeometry(siteW + 8, 0.2, siteD + 8),
       new THREE.MeshStandardMaterial({ color: PALETTE.paver, roughness: 0.95 }),
     );
     slab.position.y = -0.1;
     slab.receiveShadow = true;
     this.scene.add(slab);
 
-    const gridHelper = new THREE.GridHelper(site, gridSize, 0x8d8874, 0xa39d88);
-    (gridHelper.material as THREE.Material).transparent = true;
-    (gridHelper.material as THREE.Material).opacity = 0.25;
-    gridHelper.position.y = 0.04;
+    // rectangle-capable cell lattice
+    const pts: number[] = [];
+    for (let x = 0; x <= gridW; x++) {
+      pts.push(x * CELL_SIZE - siteW / 2, 0.04, -siteD / 2, x * CELL_SIZE - siteW / 2, 0.04, siteD / 2);
+    }
+    for (let z = 0; z <= gridD; z++) {
+      pts.push(-siteW / 2, 0.04, z * CELL_SIZE - siteD / 2, siteW / 2, 0.04, z * CELL_SIZE - siteD / 2);
+    }
+    const latticeGeom = new THREE.BufferGeometry();
+    latticeGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+    const gridHelper = new THREE.LineSegments(
+      latticeGeom,
+      new THREE.LineBasicMaterial({ color: 0x8d8874, transparent: true, opacity: 0.25 }),
+    );
     gridHelper.name = 'gridHelper';
     this.scene.add(gridHelper);
+
+    this.groundMeshes = [meadow, slab, gridHelper];
+    this.applyUtilityViewToGround();
+  }
+
+  /** Replace the site with an empty grid of the given cell dimensions. */
+  resizeGrid(w: number, d: number): void {
+    this.clearAll();
+    this.grid = new Grid(w, d);
+    this.buildGround(w, d);
+    const ext = (Math.max(w, d) * CELL_SIZE) / 2 + 60;
+    this.sun.shadow.camera.left = -ext;
+    this.sun.shadow.camera.right = ext;
+    this.sun.shadow.camera.top = ext;
+    this.sun.shadow.camera.bottom = -ext;
+    this.sun.shadow.camera.updateProjectionMatrix();
+    this.enter();
+    this.notifyLayoutChanged();
+  }
+
+  // -- underground utilities x-ray ------------------------------------------
+
+  private applyUtilityViewToGround(): void {
+    for (const m of this.groundMeshes) {
+      if (m.name === 'gridHelper' || !(m instanceof THREE.Mesh)) continue;
+      const mat = m.material as THREE.MeshStandardMaterial;
+      mat.transparent = this.utilityView;
+      mat.opacity = this.utilityView ? 0.3 : 1;
+      mat.needsUpdate = true;
+    }
+  }
+
+  private applyGhost(group: THREE.Group, on: boolean): void {
+    group.traverse((o) => {
+      if (!(o instanceof THREE.Mesh)) return;
+      if (on) {
+        if (!o.userData.origMat) o.userData.origMat = o.material;
+        o.material = this.ghostMat;
+      } else if (o.userData.origMat) {
+        o.material = o.userData.origMat;
+        delete o.userData.origMat;
+      }
+    });
+  }
+
+  setUtilityView(on: boolean): void {
+    this.utilityView = on;
+    this.applyUtilityViewToGround();
+    for (const group of this.moduleGroups.values()) this.applyGhost(group, on);
+    this.pools.setVisible(!on);
+    this.utilities.setVisible(on);
   }
 
   setGridVisible(v: boolean): void {
@@ -95,7 +178,7 @@ export class TesseraMode implements Mode {
 
   enter(): void {
     this.app.renderer.shadowMap.enabled = true;
-    const site = this.grid.width * CELL_SIZE;
+    const site = Math.max(this.grid.width, this.grid.depth) * CELL_SIZE;
     this.app.rig.setView(
       { x: site * 0.55, y: site * 0.62, z: site * 0.8 },
       { x: 0, y: 0, z: 0 },
@@ -200,6 +283,7 @@ export class TesseraMode implements Mode {
     group.userData.instances = built.instances;
     const matrix = this.placementWorldMatrix(placed);
     group.applyMatrix4(matrix);
+    if (this.utilityView) this.applyGhost(group, true);
     this.scene.add(group);
     this.moduleGroups.set(index, group);
   }

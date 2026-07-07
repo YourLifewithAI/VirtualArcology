@@ -11,12 +11,24 @@ export class InfoPanel {
   onClose: (() => void) | null = null;
   onMove: (() => void) | null = null;
   onRotate: (() => void) | null = null;
+  /** Toggle the utilities detail flyout (the tab on the panel's left edge). */
+  onUtilities: (() => void) | null = null;
+
+  private tab: HTMLDivElement;
 
   constructor(parent: HTMLElement) {
     this.el = document.createElement('div');
     this.el.className = 'va-info';
     this.el.style.display = 'none';
     parent.appendChild(this.el);
+    // utilities tab lives beside the panel so it survives panel scrolling
+    this.tab = document.createElement('div');
+    this.tab.className = 'va-info-tab';
+    this.tab.title = 'Energy, compute, water & wastewater detail';
+    this.tab.textContent = '⚡ UTILITIES';
+    this.tab.style.display = 'none';
+    this.tab.onclick = () => this.onUtilities?.();
+    parent.appendChild(this.tab);
   }
 
   show(def: ModuleDef, placed: PlacedModule): void {
@@ -44,10 +56,12 @@ export class InfoPanel {
     (this.el.querySelector('.va-info-move') as HTMLButtonElement).onclick = () => this.onMove?.();
     (this.el.querySelector('.va-info-rotate') as HTMLButtonElement).onclick = () => this.onRotate?.();
     this.el.style.display = '';
+    this.tab.style.display = '';
   }
 
   hide(): void {
     this.el.style.display = 'none';
+    this.tab.style.display = 'none';
   }
 
   get visible(): boolean {

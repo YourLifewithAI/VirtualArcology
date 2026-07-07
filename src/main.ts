@@ -11,6 +11,10 @@ import { PalettePanel } from './ui/PalettePanel';
 import { Hud } from './ui/Hud';
 import { InfoPanel } from './ui/InfoPanel';
 import { LedgerPanel } from './ui/LedgerPanel';
+import { UtilitiesPanel } from './ui/UtilitiesPanel';
+import { Compass } from './ui/Compass';
+import { SiteDefiner } from './tessera/SiteDefiner';
+import type { ModuleDef } from './catalog/types';
 import { getModule } from './catalog/ModuleCatalog';
 import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
@@ -35,17 +39,40 @@ const persistence = new Persistence(tessera);
 const hud = new Hud(uiRoot, app);
 const infoPanel = new InfoPanel(uiRoot);
 const ledger = new LedgerPanel(uiRoot, tessera);
+const utilitiesPanel = new UtilitiesPanel(uiRoot);
+new Compass(uiRoot, app);
+const siteDefiner = new SiteDefiner(app, tessera, uiRoot);
+let inspectedDef: ModuleDef | null = null;
+
+siteDefiner.onConfirm = (w, d) => {
+  tessera.resizeGrid(w, d);
+  placement.resetHistory();
+  placement.revalidateInspection();
+  hud.showToast(`Fresh ${w * 10} × ${d * 10} m site — build away`);
+};
+siteDefiner.onExit = () => {
+  placement.suspended = walkthrough.state !== 'off';
+  updateHint();
+};
 const walkthrough = new WalkthroughController(app);
 
 placement.onInspect = (index, placed) => {
   if (index !== null && placed) {
     const def = getModule(placed.defId);
     if (def) {
+      inspectedDef = def;
       infoPanel.show(def, placed);
+      if (utilitiesPanel.visible) utilitiesPanel.show(def);
       return;
     }
   }
+  inspectedDef = null;
   infoPanel.hide();
+  utilitiesPanel.hide();
+};
+infoPanel.onUtilities = () => {
+  if (utilitiesPanel.visible) utilitiesPanel.hide();
+  else if (inspectedDef) utilitiesPanel.show(inspectedDef);
 };
 infoPanel.onClose = () => placement.inspect(null);
 infoPanel.onDelete = () => placement.removeInspected();
@@ -170,6 +197,17 @@ const toolbar = new Toolbar(uiRoot, {
     };
   })(),
   toggleLedger: () => ledger.toggle(),
+  togglePipes: () => {
+    tessera.setUtilityView(!tessera.utilityView);
+    return tessera.utilityView;
+  },
+  newSite: () => {
+    if (walkthrough.state !== 'off') walkthrough.exit();
+    placement.select(null);
+    placement.inspect(null);
+    placement.suspended = true;
+    siteDefiner.begin();
+  },
   canUndo: () => placement.canUndo(),
   canRedo: () => placement.canRedo(),
 });
