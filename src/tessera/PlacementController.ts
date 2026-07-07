@@ -31,8 +31,14 @@ export class PlacementController {
   private undoStack: Command[] = [];
   private redoStack: Command[] = [];
 
+  /** Currently inspected placement (click a building with no palette module armed). */
+  private selectedPlacementIndex: number | null = null;
+  private selectionBox: THREE.Group | null = null;
+
   /** UI hook: called when selection or hover validity changes. */
   onStateChanged: (() => void) | null = null;
+  /** UI hook: called when the inspected building changes (null = deselected). */
+  onInspect: ((index: number | null, placed: PlacedModule | null) => void) | null = null;
   /** When true (walkthrough active), all builder input is ignored. */
   suspended = false;
 
@@ -55,8 +61,60 @@ export class PlacementController {
     if (defId && !getModule(defId)) return;
     this.selectedId = defId;
     this.rotation = 0;
+    if (defId) this.inspect(null); // arming the ghost dismisses the inspector
     this.refreshGhost();
     this.onStateChanged?.();
+  }
+
+  /** Select a placed building for inspection (null clears). */
+  inspect(index: number | null): void {
+    if (index !== null && !this.mode.grid.placements[index]) index = null;
+    if (this.selectedPlacementIndex === index) return;
+    this.selectedPlacementIndex = index;
+    this.refreshSelectionBox();
+    const placed = index !== null ? this.mode.grid.placements[index] : null;
+    this.onInspect?.(index, placed);
+  }
+
+  get inspectedIndex(): number | null {
+    return this.selectedPlacementIndex;
+  }
+
+  private refreshSelectionBox(): void {
+    if (this.selectionBox) {
+      this.mode.scene.remove(this.selectionBox);
+      this.selectionBox.traverse((o) => {
+        if (o instanceof THREE.Mesh || o instanceof THREE.LineSegments) o.geometry.dispose();
+      });
+      this.selectionBox = null;
+    }
+    const index = this.selectedPlacementIndex;
+    if (index === null) return;
+    const placed = this.mode.grid.placements[index];
+    if (!placed) return;
+    const def = getModule(placed.defId)!;
+    const { w, d } = rotatedFootprint(def, placed.rot);
+    const center = this.mode.grid.placementCenter(def, placed);
+    const h = Math.max(def.height, 2) + 1;
+
+    const group = new THREE.Group();
+    const boxGeom = new THREE.BoxGeometry(w * CELL_SIZE + 0.6, h, d * CELL_SIZE + 0.6);
+    boxGeom.translate(0, h / 2, 0);
+    const fill = new THREE.Mesh(
+      boxGeom,
+      new THREE.MeshBasicMaterial({ color: 0xe8b23a, transparent: true, opacity: 0.08, depthWrite: false }),
+    );
+    fill.renderOrder = 15;
+    group.add(fill);
+    const edges = new THREE.LineSegments(
+      new THREE.EdgesGeometry(boxGeom),
+      new THREE.LineBasicMaterial({ color: 0xe8b23a, transparent: true, opacity: 0.9 }),
+    );
+    edges.renderOrder = 16;
+    group.add(edges);
+    group.position.set(center.x, 0.02, center.z);
+    this.mode.scene.add(group);
+    this.selectionBox = group;
   }
 
   rotate(): void {
@@ -79,6 +137,7 @@ export class PlacementController {
     if (cmd.type === 'place') this.mode.removePlacement(cmd.index);
     else this.mode.restorePlacement(cmd.index, cmd.placed);
     this.redoStack.push(cmd);
+    this.revalidateInspection();
     this.onStateChanged?.();
   }
 
@@ -88,7 +147,18 @@ export class PlacementController {
     if (cmd.type === 'place') this.mode.restorePlacement(cmd.index, cmd.placed);
     else this.mode.removePlacement(cmd.index);
     this.undoStack.push(cmd);
+    this.revalidateInspection();
     this.onStateChanged?.();
+  }
+
+  /** Drop the inspection if its placement no longer exists (undo/redo/load). */
+  revalidateInspection(): void {
+    const index = this.selectedPlacementIndex;
+    if (index !== null && !this.mode.grid.placements[index]) {
+      this.selectedPlacementIndex = null;
+      this.refreshSelectionBox();
+      this.onInspect?.(null, null);
+    }
   }
 
   /** Clear undo history (e.g. after loading a layout). */
@@ -171,6 +241,17 @@ export class PlacementController {
     this.setGhostMaterial(this.valid);
   }
 
+  private placementIndexAtPointer(e: PointerEvent): number | null {
+    const el = this.app.renderer.domElement;
+    this.pointer.set((e.clientX / el.clientWidth) * 2 - 1, -(e.clientY / el.clientHeight) * 2 + 1);
+    this.raycaster.setFromCamera(this.pointer, this.app.rig.camera);
+    if (!this.raycaster.ray.intersectPlane(this.groundPlane, this.hit)) return null;
+    const cell = this.mode.grid.worldToCell(this.hit.x, this.hit.z);
+    if (!this.mode.grid.inBounds(cell.x, cell.z)) return null;
+    const idx = this.mode.grid.cellIndexAt(cell.x, cell.z);
+    return idx === 0 ? null : idx - 1;
+  }
+
   private onPointerDown(e: PointerEvent): void {
     if (this.suspended) return;
     if (e.button === 2) {
@@ -179,7 +260,12 @@ export class PlacementController {
     }
     if (e.button !== 0) return;
     const def = this.def();
-    if (!def || !this.anchor || !this.valid) return;
+    if (!def) {
+      // no ghost armed: clicking picks a building to inspect (or clears)
+      this.inspect(this.placementIndexAtPointer(e));
+      return;
+    }
+    if (!this.anchor || !this.valid) return;
     const placed: PlacedModule = {
       defId: def.id,
       x: this.anchor.x,
@@ -196,22 +282,23 @@ export class PlacementController {
   }
 
   private deleteAtPointer(e: PointerEvent): void {
-    const el = this.app.renderer.domElement;
-    this.pointer.set((e.clientX / el.clientWidth) * 2 - 1, -(e.clientY / el.clientHeight) * 2 + 1);
-    this.raycaster.setFromCamera(this.pointer, this.app.rig.camera);
-    if (!this.raycaster.ray.intersectPlane(this.groundPlane, this.hit)) return;
-    const cell = this.mode.grid.worldToCell(this.hit.x, this.hit.z);
-    if (!this.mode.grid.inBounds(cell.x, cell.z)) return;
-    const idx = this.mode.grid.cellIndexAt(cell.x, cell.z);
-    if (idx === 0) return;
-    const index = idx - 1;
+    const index = this.placementIndexAtPointer(e);
+    if (index !== null) this.removePlacementWithUndo(index);
+  }
+
+  private removePlacementWithUndo(index: number): void {
     const placed = this.mode.removePlacement(index);
-    if (placed) {
-      this.undoStack.push({ type: 'remove', index, placed });
-      this.redoStack = [];
-      this.updateGhostPosition();
-      this.onStateChanged?.();
-    }
+    if (!placed) return;
+    if (this.selectedPlacementIndex === index) this.inspect(null);
+    this.undoStack.push({ type: 'remove', index, placed });
+    this.redoStack = [];
+    this.updateGhostPosition();
+    this.onStateChanged?.();
+  }
+
+  /** Remove the currently inspected building (inspector delete button / Delete key). */
+  removeInspected(): void {
+    if (this.selectedPlacementIndex !== null) this.removePlacementWithUndo(this.selectedPlacementIndex);
   }
 
   private onKeyDown(e: KeyboardEvent): void {
@@ -221,7 +308,10 @@ export class PlacementController {
     if (e.key === 'r' || e.key === 'R') {
       this.rotate();
     } else if (e.key === 'Escape') {
-      this.select(null);
+      if (this.selectedPlacementIndex !== null) this.inspect(null);
+      else this.select(null);
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      this.removeInspected();
     } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault();
       this.undo();

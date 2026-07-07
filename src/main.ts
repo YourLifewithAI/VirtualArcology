@@ -9,6 +9,8 @@ import { DEMO_LAYOUT } from './tessera/demoLayout';
 import { Toolbar } from './ui/Toolbar';
 import { PalettePanel } from './ui/PalettePanel';
 import { Hud } from './ui/Hud';
+import { InfoPanel } from './ui/InfoPanel';
+import { getModule } from './catalog/ModuleCatalog';
 import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
 import { ArcologyMode } from './arcology/ArcologyMode';
@@ -30,7 +32,21 @@ const placement = new PlacementController(app, tessera);
 const persistence = new Persistence(tessera);
 
 const hud = new Hud(uiRoot, app);
+const infoPanel = new InfoPanel(uiRoot);
 const walkthrough = new WalkthroughController(app);
+
+placement.onInspect = (index, placed) => {
+  if (index !== null && placed) {
+    const def = getModule(placed.defId);
+    if (def) {
+      infoPanel.show(def, placed);
+      return;
+    }
+  }
+  infoPanel.hide();
+};
+infoPanel.onClose = () => placement.inspect(null);
+infoPanel.onDelete = () => placement.removeInspected();
 
 // pause/resume overlay
 const overlay = document.createElement('div');
@@ -60,6 +76,7 @@ function ensureArcology(): ArcologyMode {
 function setAppMode(mode: 'tessera' | 'arcology'): void {
   if (walkthrough.state !== 'off') walkthrough.exit();
   if (mode === 'arcology') {
+    placement.inspect(null);
     app.setMode(ensureArcology());
     palette.setVisible(false);
     arcologyPanel?.setVisible(true);
@@ -90,6 +107,7 @@ function startWalk(): void {
     z: Math.max(-site, Math.min(site, target.z)),
   };
   placement.select(null);
+  placement.inspect(null);
   placement.suspended = true;
   walkthrough.enter(new GridCollision(tessera.grid), spawn);
 }
@@ -121,6 +139,7 @@ const toolbar = new Toolbar(uiRoot, {
     persistence.openFilePicker(
       () => {
         placement.resetHistory();
+        placement.revalidateInspection();
         hud.showToast('Layout loaded');
       },
       (msg) => hud.showToast(`Load failed: ${msg}`),
@@ -128,6 +147,7 @@ const toolbar = new Toolbar(uiRoot, {
   clear: () => {
     tessera.clearAll();
     placement.resetHistory();
+    placement.revalidateInspection();
   },
   undo: () => placement.undo(),
   redo: () => placement.redo(),
@@ -158,7 +178,7 @@ function updateHint(): void {
   if (placement.selected) {
     hud.setHint('<b>Click</b> place · <b>R</b> rotate · <b>Right-click</b> delete · <b>Esc</b> deselect');
   } else {
-    hud.setHint('Pick a module from the palette · <b>Right-click</b> deletes · drag to orbit, scroll to zoom');
+    hud.setHint('<b>Click</b> a building to inspect it · pick a module from the palette to build · <b>Right-click</b> deletes');
   }
 }
 updateHint();
@@ -206,6 +226,7 @@ app.onFirstFrame(() => {
 (window as unknown as Record<string, unknown>).__arc = {
   app,
   tessera,
+  placement,
   stats: () => app.stats(),
   serialize: () => serializeLayout(tessera.grid),
   loadLayout: (json: unknown) => {
