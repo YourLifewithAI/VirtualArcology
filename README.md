@@ -51,12 +51,26 @@ Rotate, or Remove it, or open the **⚡ Utilities** tab for its energy, compute
 area, population, jobs, energy, compute, water balance, food coverage,
 capex), sourced from [`docs/tessera-economics.md`](docs/tessera-economics.md).
 
-**Pipes** toggles the underground-infrastructure x-ray: power, water, sewer
-and fiber trunks under every street, with service stubs to each building.
+**Pipes** toggles the underground-infrastructure x-ray — and every line is
+*routed*: service stubs run to the street, then follow the street network to
+the right plant (sewer → wastewater treatment, water → water tower, power →
+substation/SMR, fiber → data center/comms mast). Only trunks that actually
+carry a service are drawn, so the network reads as a real tree converging on
+its plants. Anything that can't reach one — no street nearby, a gap in the
+lattice, or no plant placed — gets a red stub and an above-ground red flag,
+with a toast tallying the gaps.
 **New site** lets you drag out a fresh footprint (live m² readout) — the
 demo neighborhood is preplanned, but new builds start with your own site
 boundary, and saved layouts carry their footprint with them. A compass sits
 top-right so north stays findable.
+
+**🎨 Theme** cycles architectural palettes — Solarpunk (Texas timber),
+Desert Adobe, Nordic Timber, Neon Night, Mediterranean — rebuilding every
+placed module in place (colors are baked into vertex data), with matching
+sky and lighting. **🌍 Region** cycles the regional archetype the site sits
+in: Temperate, Great Plains, High Desert, Tundra, or Exurban Fringe — each
+with its own ground color, fog, and off-site scatter (groves, scrub,
+snowfields, homesteads). Both persist across reloads.
 
 **Save/Load** exports the layout as JSON (and autosaves to your browser).
 
@@ -89,7 +103,8 @@ extracted from the Arcology Knowledge Node at lifewithai.ai.
 
 `?mode=arcology` · `?demo=1` (bundled layout) · `?empty=1` (blank site) ·
 `?xray=1` · `?shafts=1` · `?cut=0.45` (cutaway fraction) · `?freeze=1`
-(pause ambient animation)
+(pause ambient animation) · `?theme=neon-night` (architectural theme) ·
+`?biome=desert` (regional archetype) · `?pipes=1` (underground view)
 
 ## Deploying to GitHub Pages
 

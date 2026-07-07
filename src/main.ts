@@ -1,6 +1,8 @@
 import './ui/ui.css';
 import { App } from './core/App';
+import { applyTheme, THEME_LABELS, THEME_NAMES } from './core/Palette';
 import { registerAllModules } from './catalog/modules/index';
+import { BIOMES, BIOME_NAMES } from './tessera/BiomeLayer';
 import { TesseraMode } from './tessera/TesseraMode';
 import { PlacementController } from './tessera/PlacementController';
 import { Persistence } from './tessera/Persistence';
@@ -27,12 +29,21 @@ const params = new URLSearchParams(location.search);
 
 registerAllModules();
 
+// theme must be live before anything builds — palette colors bake into vertex colors
+let themeName = params.get('theme') ?? localStorage.getItem('va-theme') ?? 'solarpunk';
+if (!THEME_NAMES.includes(themeName)) themeName = 'solarpunk';
+applyTheme(themeName);
+let biomeName = params.get('biome') ?? localStorage.getItem('va-biome') ?? 'temperate';
+if (!BIOMES[biomeName]) biomeName = 'temperate';
+
 const container = document.getElementById('app')!;
 const uiRoot = document.getElementById('ui-root')!;
 const app = new App(container);
 if (params.get('freeze') === '1') app.animate = false;
 
 const tessera = new TesseraMode(app);
+tessera.refreshTheme(themeName); // lighting env (nothing placed yet, so this is cheap)
+if (biomeName !== 'temperate') tessera.setBiome(biomeName);
 const placement = new PlacementController(app, tessera);
 const persistence = new Persistence(tessera);
 
@@ -199,6 +210,14 @@ const toolbar = new Toolbar(uiRoot, {
   toggleLedger: () => ledger.toggle(),
   togglePipes: () => {
     tessera.setUtilityView(!tessera.utilityView);
+    if (tessera.utilityView) {
+      const n = tessera.serviceAlerts;
+      hud.showToast(
+        n > 0
+          ? `${n} service line${n === 1 ? '' : 's'} can't reach a plant — shown in red`
+          : 'All services routed to their plants',
+      );
+    }
     return tessera.utilityView;
   },
   newSite: () => {
@@ -207,6 +226,22 @@ const toolbar = new Toolbar(uiRoot, {
     placement.inspect(null);
     placement.suspended = true;
     siteDefiner.begin();
+  },
+  cycleTheme: () => {
+    const i = THEME_NAMES.indexOf(themeName);
+    themeName = THEME_NAMES[(i + 1) % THEME_NAMES.length];
+    localStorage.setItem('va-theme', themeName);
+    applyTheme(themeName);
+    tessera.refreshTheme(themeName);
+    arcology?.regenerate();
+    hud.showToast(`Theme: ${THEME_LABELS[themeName] ?? themeName}`);
+  },
+  cycleBiome: () => {
+    const i = BIOME_NAMES.indexOf(tessera.biome);
+    const next = BIOME_NAMES[(i + 1) % BIOME_NAMES.length];
+    localStorage.setItem('va-biome', next);
+    tessera.setBiome(next);
+    hud.showToast(`Region: ${BIOMES[next].label}`);
   },
   canUndo: () => placement.canUndo(),
   canRedo: () => placement.canRedo(),
@@ -254,6 +289,7 @@ if (params.get('empty') === '1') {
   }
 }
 placement.resetHistory();
+if (params.get('pipes') === '1') tessera.setUtilityView(true);
 
 if (params.get('mode') === 'arcology') {
   const arc = ensureArcology();

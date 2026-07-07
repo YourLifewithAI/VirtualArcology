@@ -242,4 +242,13 @@ put('tree-row', 48, 53);
 put('tree-row', 49, 53);
 put('vertical-farm', 52, 53);
 
+// ============================================================================
+// Phase 4: connect the southern street row (z 48) to the main lattice.
+// Utility routing exposed it as an island — the whole southern housing row
+// couldn't reach the plants. Three connector streets through the south meadow.
+// ============================================================================
+for (const x of [18, 38, 48]) {
+  for (let z = 43; z <= 47; z++) put('street', x, z);
+}
+
 export const DEMO_LAYOUT: PlacedModule[] = L;

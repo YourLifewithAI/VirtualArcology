@@ -102,6 +102,17 @@ export function instancedPartGeometry(part: InstancePart): THREE.BufferGeometry 
   return geom;
 }
 
+/**
+ * Drop cached instanced-part geometry. Palette colors are baked into these
+ * at build time, so a theme change must clear the cache before pools and
+ * scatter layers rebuild. Callers must remove meshes using the old
+ * geometries first — this disposes them.
+ */
+export function clearInstancedPartCache(): void {
+  for (const g of instancedGeomCache.values()) g.dispose();
+  instancedGeomCache.clear();
+}
+
 export const INSTANCE_PARTS: InstancePart[] = ['tree', 'treeRound', 'shrub', 'solarPanel'];
 
 // ---------------------------------------------------------------------------

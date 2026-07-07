@@ -49,6 +49,9 @@ export class ArcologyMode implements Mode {
   }
 
   regenerate(): void {
+    // pick up theme changes (palette colors bake into the massing at build time)
+    (this.scene.background as THREE.Color).setHex(PALETTE.sky);
+    (this.scene.fog as THREE.Fog).color.setHex(PALETTE.skyHorizon);
     if (this.build) {
       this.scene.remove(this.build.group);
       this.build.dispose();
