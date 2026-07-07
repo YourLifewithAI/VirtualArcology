@@ -6,12 +6,15 @@ import * as THREE from 'three';
 import type { App } from '../core/App';
 import type { Mode } from '../core/Mode';
 import { MATERIALS } from '../core/Materials';
-import { PALETTE } from '../core/Palette';
+import { PALETTE, THEME_ENV } from '../core/Palette';
 import { Rng } from '../core/Rng';
 import { buildModuleGroup, type InstanceRequest } from '../core/geo';
 import { getModule } from '../catalog/ModuleCatalog';
+import { clearInstancedPartCache } from '../catalog/parts';
+import { BiomeLayer } from './BiomeLayer';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
+import { RoadNetwork } from './RoadNetwork';
 import { UtilityNetwork } from './UtilityNetwork';
 
 export const DEFAULT_GRID = 56;
@@ -23,10 +26,17 @@ export class TesseraMode implements Mode {
   private moduleGroups = new Map<number, THREE.Group>();
   private pools: InstancePools;
   private sun: THREE.DirectionalLight;
+  private hemi: THREE.HemisphereLight;
   private groundMeshes: THREE.Object3D[] = [];
   private utilities: UtilityNetwork;
+  private roads: RoadNetwork;
+  private biomes: BiomeLayer;
+  /** Active regional archetype (BIOMES key). */
+  biome = 'temperate';
   /** True while the underground-infrastructure x-ray view is active. */
   utilityView = false;
+  /** True while the street-connectivity overlay is active. */
+  roadView = false;
   private ghostMat = new THREE.MeshBasicMaterial({
     color: 0xbcd4e6,
     transparent: true,
@@ -42,6 +52,7 @@ export class TesseraMode implements Mode {
   private notifyLayoutChanged(): void {
     this.layoutVersion++;
     if (this.utilityView) this.utilities.setVisible(true);
+    if (this.roadView) this.roads.setVisible(true);
     this.onLayoutChanged?.();
   }
 
@@ -49,12 +60,14 @@ export class TesseraMode implements Mode {
     this.grid = new Grid(gridSize, gridSize);
     this.pools = new InstancePools(this.scene);
     this.utilities = new UtilityNetwork(this);
+    this.roads = new RoadNetwork(this);
 
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
+    this.biomes = new BiomeLayer(this.scene);
 
-    const hemi = new THREE.HemisphereLight(0xdff1ff, 0x9a8a6a, 0.9);
-    this.scene.add(hemi);
+    this.hemi = new THREE.HemisphereLight(0xdff1ff, 0x9a8a6a, 0.9);
+    this.scene.add(this.hemi);
 
     this.sun = new THREE.DirectionalLight(0xfff2dd, 2.2);
     this.sun.position.set(320, 420, 180);
@@ -86,13 +99,7 @@ export class TesseraMode implements Mode {
     const siteW = gridW * CELL_SIZE;
     const siteD = gridD * CELL_SIZE;
 
-    const meadow = new THREE.Mesh(
-      new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: PALETTE.prairie, roughness: 1 }),
-    );
-    meadow.position.y = -0.15;
-    meadow.receiveShadow = true;
-    this.scene.add(meadow);
+    this.biomes.rebuild(this.biome, gridW, gridD, this.scene.fog as THREE.Fog);
 
     const slab = new THREE.Mesh(
       new THREE.BoxGeometry(siteW + 8, 0.2, siteD + 8),
@@ -119,8 +126,65 @@ export class TesseraMode implements Mode {
     gridHelper.name = 'gridHelper';
     this.scene.add(gridHelper);
 
-    this.groundMeshes = [meadow, slab, gridHelper];
+    this.groundMeshes = [slab, gridHelper];
     this.applyUtilityViewToGround();
+  }
+
+  /** Swap the regional archetype (meadow, fog, off-site scatter). Visual only. */
+  setBiome(name: string): void {
+    this.biome = name;
+    this.biomes.rebuild(name, this.grid.width, this.grid.depth, this.scene.fog as THREE.Fog);
+  }
+
+  /**
+   * Re-bake everything that has PALETTE colors in it. Call after applyTheme():
+   * palette colors live in vertex colors baked at build time, so every placed
+   * module, scatter pool, and ground surface is rebuilt in place (placement
+   * indices are preserved — undo history and inspection stay valid).
+   */
+  refreshTheme(themeName: string): void {
+    const env = THEME_ENV[themeName] ?? THEME_ENV.solarpunk;
+    (this.scene.background as THREE.Color).setHex(PALETTE.sky);
+    this.sun.intensity = env.sun;
+    this.sun.color.setHex(env.sunColor);
+    this.hemi.intensity = env.hemi;
+
+    for (const [index, group] of [...this.moduleGroups.entries()]) {
+      this.scene.remove(group);
+      group.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.geometry.dispose();
+      });
+      const placed = this.grid.placements[index];
+      if (placed) this.spawnGroup(index, placed);
+      else this.moduleGroups.delete(index);
+    }
+
+    // instanced scatter has baked colors too: drop the geometry cache and
+    // rebuild pools + biome ring from fresh geometry
+    this.pools.dispose();
+    clearInstancedPartCache();
+    this.pools = new InstancePools(this.scene);
+    this.rebuildInstances();
+    if (this.utilityView) this.pools.setVisible(false);
+
+    // slab/lattice colors + biome fog color come from the palette
+    this.buildGround(this.grid.width, this.grid.depth);
+  }
+
+  /** Building-utility pairs that couldn't reach their plant (valid while pipes view is on). */
+  get serviceAlerts(): number {
+    return this.utilities.unconnected;
+  }
+
+  /** Street connectivity overlay (teal = on the transit network, red = island). */
+  setRoadView(on: boolean): void {
+    this.roadView = on;
+    this.roads.setVisible(on);
+  }
+
+  /** Valid while the road view is on. */
+  get roadStats(): { disconnected: number; total: number } {
+    return { disconnected: this.roads.disconnected, total: this.roads.totalStreets };
   }
 
   /** Replace the site with an empty grid of the given cell dimensions. */
@@ -148,6 +212,7 @@ export class TesseraMode implements Mode {
       mat.opacity = this.utilityView ? 0.3 : 1;
       mat.needsUpdate = true;
     }
+    this.biomes.setTranslucent(this.utilityView);
   }
 
   private applyGhost(group: THREE.Group, on: boolean): void {

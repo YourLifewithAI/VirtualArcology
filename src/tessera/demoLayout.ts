@@ -242,4 +242,29 @@ put('tree-row', 48, 53);
 put('tree-row', 49, 53);
 put('vertical-farm', 52, 53);
 
+// ============================================================================
+// Phase 4: connect the southern street row (z 48) to the main lattice.
+// Utility routing exposed it as an island — the whole southern housing row
+// couldn't reach the plants. Three connector streets through the south meadow.
+// ============================================================================
+for (const x of [18, 38, 48]) {
+  for (let z = 43; z <= 47; z++) put('street', x, z);
+}
+
+// ============================================================================
+// Phase 5: the mass-transit seed — AV shuttle depots spread around town.
+// Six-seater pods loop between these and the transit hub over the street
+// lattice, the ground-floor version of the arcology's transport spine.
+// ============================================================================
+put('av-depot', 16, 26); // center-west, on the x18 spine
+put('av-depot', 42, 19); // northeast quadrant
+put('av-depot', 26, 33); // south of the plaza
+put('av-depot', 28, 46); // south meadow, on the z48 row
+put('av-depot', 52, 20); // eastern civic district
+// station access road so the transit hub itself anchors the shuttle
+// network: west along the platform, then south past the SMR campus to
+// the z12 spine (the x47 corridor is blocked by the SMR footprint)
+for (const [x, z] of [[45, 1], [44, 1], [43, 1], [43, 2], [42, 2]] as const) put('street', x, z);
+for (let z = 3; z <= 11; z++) put('street', 42, z);
+
 export const DEMO_LAYOUT: PlacedModule[] = L;

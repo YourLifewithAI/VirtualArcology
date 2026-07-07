@@ -9,7 +9,10 @@ export interface ToolbarActions {
   toggleGrid(): void;
   toggleLedger(): void;
   togglePipes(): boolean;
+  toggleRoads(): boolean;
   newSite(): void;
+  cycleTheme(): void;
+  cycleBiome(): void;
   canUndo(): boolean;
   canRedo(): boolean;
 }
@@ -53,8 +56,14 @@ export class Toolbar {
     add('ledger', 'Ledger', () => actions.toggleLedger(), 'Live economics of everything placed');
     add('pipes', 'Pipes', () => {
       this.btns.pipes.classList.toggle('active', actions.togglePipes());
-    }, 'Underground infrastructure view (power, water, sewer, fiber)');
+    }, 'Underground infrastructure view — services route to their plants; red = not connected');
+    add('roads', 'Roads', () => {
+      this.btns.roads.classList.toggle('active', actions.toggleRoads());
+    }, 'Street connectivity — teal streets reach the transit network, red are islands');
     add('new', 'New site', () => actions.newSite(), 'Drag out a fresh site footprint');
+    sep();
+    add('theme', '🎨 Theme', () => actions.cycleTheme(), 'Cycle architectural theme (rebuilds every placed module)');
+    add('biome', '🌍 Region', () => actions.cycleBiome(), 'Cycle the regional archetype the site sits in');
     sep();
     add('save', 'Save', () => actions.save(), 'Download layout JSON');
     add('load', 'Load', () => actions.load(), 'Load layout JSON');
@@ -73,8 +82,8 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'new', 'save', 'load', 'clear']) {
-      this.btns[key].style.display = inTessera || key === 'walk' ? '' : 'none';
+    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
+      this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();
     this.btns.redo.disabled = !this.actions.canRedo();

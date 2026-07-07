@@ -80,6 +80,7 @@ export const STATS: Record<string, ModuleStats> = {
   // logistics
   'logistics-hub': { capexM: 8, jobs: 25, useMW: 0.1, computeUsePF: 10, waterM3d: 8, sewerM3d: 7 },
   'robot-depot': { capexM: 0.5, jobs: 2, useMW: 0.05, waterM3d: 1, sewerM3d: 0.8 },
+  'av-depot': { capexM: 4, jobs: 3, useMW: 0.35, computeUsePF: 5, waterM3d: 1.5, sewerM3d: 1.2 },
   'water-tower': { capexM: 6, jobs: 2, useMW: 0.1, waterM3d: -1200, sewerM3d: 1 },
   'transit-hub': { capexM: 35, jobs: 20, useMW: 0.15, computeUsePF: 8, waterM3d: 10, sewerM3d: 9 },
 
