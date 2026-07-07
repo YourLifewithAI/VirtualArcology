@@ -7,6 +7,7 @@ export interface ToolbarActions {
   redo(): void;
   walk(): void;
   toggleGrid(): void;
+  toggleLedger(): void;
   canUndo(): boolean;
   canRedo(): boolean;
 }
@@ -47,6 +48,7 @@ export class Toolbar {
     add('undo', '↩', () => actions.undo(), 'Undo (Ctrl+Z)');
     add('redo', '↪', () => actions.redo(), 'Redo (Ctrl+Y)');
     add('grid', '#', () => actions.toggleGrid(), 'Toggle grid');
+    add('ledger', 'Ledger', () => actions.toggleLedger(), 'Live economics of everything placed');
     sep();
     add('save', 'Save', () => actions.save(), 'Download layout JSON');
     add('load', 'Load', () => actions.load(), 'Load layout JSON');
@@ -65,7 +67,7 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'undo', 'redo', 'grid', 'save', 'load', 'clear']) {
+    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'save', 'load', 'clear']) {
       this.btns[key].style.display = inTessera || key === 'walk' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();

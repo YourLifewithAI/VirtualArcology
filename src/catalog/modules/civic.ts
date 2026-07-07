@@ -481,5 +481,206 @@ const commons: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons];
+
+// ---------------------------------------------------------------------------
+// Phase 2 civic additions
+// ---------------------------------------------------------------------------
+
+const school: ModuleDef = {
+  id: 'school',
+  name: 'Tessera School (K-8)',
+  category: 'civic',
+  description: 'Two classroom wings around a play court, with a garden lab and gym',
+  footprint: { w: 4, d: 3 },
+  height: 9,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 4, 3, 'path');
+    // two classroom wings + connector
+    for (const [wx, wz, ww, wd] of [[-9, -7, 20, 10], [-9, 7, 20, 10]] as const) {
+      b.box(ww, 7, wd, rng.chance(0.5) ? 'cream' : 'timber', { x: wx, z: wz, y: 0.1 });
+      b.box(ww - 1, 0.3, wd - 1, 'leaf', { x: wx, z: wz, y: 7.1 });
+      facadeWindows(b, rng, { width: ww - 3, y0: 1, rows: 2, rowHeight: 3.2, x: wx, z: wz + (wz < 0 ? -wd / 2 : wd / 2), ry: wz < 0 ? Math.PI : 0, offset: 0.06, litRatio: 0.3 });
+    }
+    b.box(4, 6.5, 6, 'terracotta', { x: -9, z: 0, y: 0.1 });
+    // gym block
+    b.box(12, 8.5, 16, 'creamDark', { x: 13, z: -3, y: 0.1 });
+    b.gable(12, 2, 16, 'steel', { x: 13, z: -3, y: 8.6 });
+    // play court + playground blobs
+    b.hquad(11, 9, 'robotTeal', { x: 13, z: 10, y: 0.14 });
+    for (let i = 0; i < 4; i++) {
+      b.box(0.8, rng.float(0.6, 1.6), 0.8, rng.pick(['canvasRed', 'canvasYellow', 'canvasTeal'] as const), { x: 9 + i * 2.4, z: 13, y: 0.14 });
+    }
+    // garden lab beds + entrance sign
+    for (let i = 0; i < 3; i++) b.box(3.5, 0.4, 1.2, 'soil', { x: -15 + i * 4.6, z: 13.2, y: 0.12 });
+    b.quad(3, 1, 'canvasYellow', { x: -9, z: 12.56, y: 2.2 });
+    b.instance('tree', 3, 0.1, 12, rng.float(0, 6.28), 1.0);
+    b.instance('tree', -17, 0.1, -13, rng.float(0, 6.28), 1.1);
+    return b.merge();
+  },
+};
+
+const fireStation: ModuleDef = {
+  id: 'fire-station',
+  name: 'Emergency Services Station',
+  category: 'civic',
+  description: 'Fire, EMS and community safety under one roof: two apparatus bays and a drill tower',
+  footprint: { w: 3, d: 2 },
+  height: 14,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 2, 'concreteDark');
+    // apparatus hall with two red bay doors
+    b.box(16, 6.5, 12, 'industryWhite', { x: -4, z: -2, y: 0.1 });
+    b.box(16.2, 0.5, 12.2, 'hazardRed', { x: -4, z: -2, y: 6.6 });
+    for (const dx of [-8.5, -0.5]) {
+      b.quad(5.5, 4.6, 'hazardRed', { x: dx + 0.8, z: 4.07, y: 0.6 });
+      b.box(6, 0.3, 0.15, 'industryWhite', { x: dx + 0.8, z: 4.12, y: 5.4 });
+    }
+    // crew quarters wing + emissive sign
+    b.box(9, 6.5, 8, 'cream', { x: 9.5, z: -4, y: 0.1 });
+    facadeWindows(b, rng, { width: 7, y0: 1, rows: 2, rowHeight: 2.8, x: 9.5, z: 0.05, ry: 0, offset: 0.06, litRatio: 0.5 });
+    b.quad(4.4, 0.9, 'hazardRed', { x: -4, z: 4.13, y: 5.6, layer: 'emissive' });
+    // drill/hose tower
+    b.box(3, 12.5, 3, 'concreteDark', { x: 12, z: 5.5, y: 0.1 });
+    b.box(3.3, 0.4, 3.3, 'hazardRed', { x: 12, z: 5.5, y: 12.6 });
+    // helipad-style EMS pad marking
+    b.disc(3.2, 'industryWhite', { x: -10.5, z: 6.2, y: 0.14 }, 14);
+    b.disc(2.4, 'hazardRed', { x: -10.5, z: 6.2, y: 0.16 }, 14);
+    return b.merge();
+  },
+};
+
+const natatorium: ModuleDef = {
+  id: 'natatorium',
+  name: 'Public Pools & Natatorium',
+  category: 'civic',
+  description: 'Indoor lap pool under a glass vault plus an outdoor pool and splash pad (it is Texas)',
+  footprint: { w: 3, d: 3 },
+  height: 9,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 3, 'paver');
+    // glass-vaulted indoor hall
+    b.box(16, 1.2, 24, 'cream', { x: -5.5, z: 0, y: 0.1 });
+    b.box(15, 6.5, 23, 'glassTint', { x: -5.5, z: 0, y: 1.3, layer: 'glass' });
+    const vault = new THREE.CylinderGeometry(7.5, 7.5, 23, 14, 1, false, 0, Math.PI);
+    vault.rotateZ(Math.PI / 2);
+    vault.rotateY(Math.PI / 2);
+    vault.translate(0, 0, 0);
+    b.custom(vault, 'glassTint', { x: -5.5, y: 7.8, layer: 'glass' });
+    b.hquad(11, 19, 'water', { x: -5.5, y: 1.35 });
+    // outdoor pool + deck + splash pad
+    b.box(11, 0.5, 16, 'concrete', { x: 8.5, z: -5, y: 0.1 });
+    b.hquad(9, 13.5, 'waterDeep', { x: 8.5, z: -5, y: 0.62 });
+    b.disc(3.4, 'glassTint', { x: 8.5, z: 9, y: 0.16 }, 14);
+    for (let i = 0; i < 3; i++) {
+      b.cyl(0.12, 2.2, 'robotTeal', { x: 7 + i * 1.6, z: 9, y: 0.16 }, 6);
+      b.dome(0.55, 'canvasTeal', { x: 7 + i * 1.6, z: 9, y: 2.3 }, 8);
+    }
+    // loungers + shade sails
+    for (let i = 0; i < 4; i++) b.box(0.7, 0.35, 1.8, 'canvasYellow', { x: 13.5, z: -11 + i * 3.4, y: 0.6 });
+    b.quad(5, 4, rng.pick(['canvasTeal', 'canvasRed'] as const), { x: 12, z: 6, y: 2.6, ry: 0.6, rx: -0.5 });
+    b.instance('tree', -14.2, 0.1, 13.5, rng.float(0, 6.28), 1.0);
+    return b.merge();
+  },
+};
+
+const venue: ModuleDef = {
+  id: 'venue',
+  name: 'Venue & Food Hall Row',
+  category: 'civic',
+  description: 'Amphitheater bowl, stage canopy and a strip of restaurant stalls facing the lawn',
+  footprint: { w: 3, d: 2 },
+  height: 8,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 2, 'grass');
+    // amphitheater: concentric seating arcs
+    for (let r = 0; r < 4; r++) {
+      const ring = new THREE.CylinderGeometry(5 + r * 1.7, 5 + r * 1.7, 0.4 + r * 0.3, 20, 1, false, Math.PI * 0.15, Math.PI * 0.7);
+      ring.translate(0, (0.4 + r * 0.3) / 2, 0);
+      b.custom(ring, r % 2 ? 'paver' : 'paverDark', { x: -6, z: 2 });
+    }
+    // stage + canopy
+    b.disc(4, 'timber', { x: -6, z: -4, y: 0.5 }, 16);
+    for (const [px, pz] of [[-9.5, -6.5], [-2.5, -6.5]] as const) b.box(0.3, 5.5, 0.3, 'steelDark', { x: px, z: pz, y: 0.5 });
+    b.gable(9, 1.8, 6, 'canvasRed', { x: -6, z: -6.3, y: 5.9 });
+    b.quad(6, 0.7, 'growWarm', { x: -6, z: -3.3, y: 5.2, layer: 'emissive' });
+    // food hall strip: 4 stalls with counters and string lights
+    for (let i = 0; i < 4; i++) {
+      const x = 5 + i * 2.6;
+      b.box(2.2, 3, 4.5, i % 2 ? 'timber' : 'terracotta', { x, z: 5, y: 0.1 });
+      b.gable(2.4, 0.8, 5, 'creamDark', { x, z: 5, y: 3.1 });
+      b.box(2.2, 1, 0.5, 'timberDark', { x, z: 2.5, y: 0.9 });
+      b.quad(1.6, 0.5, 'windowLit', { x, z: 2.74, y: 2.2, layer: 'emissive' });
+    }
+    // picnic lawn tables + festoon posts
+    for (let i = 0; i < 3; i++) b.box(1.8, 0.75, 0.9, 'timber', { x: 5 + i * 3, z: -3.5 + (i % 2), y: 0.1 });
+    b.instance('tree', 12.5, 0.1, -6.5, rng.float(0, 6.28), 1.15);
+    b.instance('tree', -13, 0.1, 7.5, rng.float(0, 6.28), 0.95);
+    return b.merge();
+  },
+};
+
+const grocery: ModuleDef = {
+  id: 'grocery',
+  name: 'Grocery Co-op',
+  category: 'civic',
+  description: 'The staples anchor: co-op market hall with a loading nook and rooftop solar',
+  footprint: { w: 2, d: 2 },
+  height: 7,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 2, 2, 'paver');
+    b.box(16, 5.5, 13, 'timber', { z: -2, y: 0.1 });
+    b.gable(16, 1.6, 13, 'leafDark', { z: -2, y: 5.6 });
+    solarRoofPatch(b, rng);
+    // glass storefront + awning + sign
+    b.quad(12, 3.2, 'glassTint', { z: 4.57, y: 0.6, layer: 'glass' });
+    b.box(13, 0.25, 1.6, 'canvasTeal', { z: 5.2, y: 3.9 });
+    b.quad(6, 0.9, 'growWarm', { z: 4.6, y: 4.6, layer: 'emissive' });
+    // produce crates out front + cargo-bike rack
+    for (let i = 0; i < 4; i++) b.box(0.9, 0.6, 0.9, rng.pick(['canvasRed', 'canvasYellow', 'leaf'] as const), { x: -5 + i * 1.4, z: 6.4, y: 0.12 });
+    for (let i = 0; i < 4; i++) b.box(0.1, 0.8, 1.2, 'steelDark', { x: 4.5 + i * 0.9, z: 7, y: 0.12 });
+    // loading nook
+    b.quad(3, 2.6, 'steelDark', { x: -8.07, z: -2, y: 0.5, ry: -Math.PI / 2 });
+    return b.merge();
+  },
+};
+
+/** small helper: a modest tilted solar patch on the grocery roof */
+function solarRoofPatch(b: PartsBuilder, rng: { float(a: number, b: number): number }): void {
+  for (let i = 0; i < 4; i++) {
+    b.box(3, 0.1, 1.7, 'solar', { x: -5 + i * 3.4, z: -2 + rng.float(-0.2, 0.2), y: 6.4, rx: -0.3 });
+  }
+}
+
+const library: ModuleDef = {
+  id: 'library',
+  name: 'Library & Knowledge Commons',
+  category: 'civic',
+  description: 'Reading hall with a lantern clerestory — the civilian face of the data center',
+  footprint: { w: 2, d: 2 },
+  height: 10,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 2, 2, 'path');
+    b.box(15, 6, 13, 'cream', { y: 0.1 });
+    // glowing lantern clerestory
+    b.box(9, 2.6, 7, 'glassTint', { y: 6.1, layer: 'glass' });
+    b.box(8.4, 2.2, 6.4, 'windowLit', { y: 6.2, layer: 'emissive' });
+    b.box(9.6, 0.4, 7.6, 'timberDark', { y: 8.7 });
+    facadeWindows(b, rng, { width: 12, y0: 1.2, rows: 1, rowHeight: 3.4, x: 0, z: 6.55, ry: 0, offset: 0.06, litRatio: 0.6, windowH: 3 });
+    // colonnade porch + reading steps
+    for (let i = 0; i < 5; i++) b.box(0.4, 3.4, 0.4, 'timber', { x: -5 + i * 2.5, z: 7.6, y: 0.1 });
+    b.box(13, 0.3, 2.4, 'timberDark', { z: 7.6, y: 3.5 });
+    b.box(10, 0.35, 1.4, 'paver', { z: 9, y: 0.1 });
+    b.instance('tree', 8.6, 0.1, 8, rng.float(0, 6.28), 0.9);
+    b.instance('shrub', -8.4, 0.1, 8, 0, 1.2);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons, school, fireStation, natatorium, venue, grocery, library];
 export default modules;

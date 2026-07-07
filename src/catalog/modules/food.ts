@@ -397,5 +397,78 @@ const orchard: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [greenhouse, verticalFarm, aquaponics, orchard];
+
+// ---------------------------------------------------------------------------
+// Phase 2 food additions
+// ---------------------------------------------------------------------------
+
+const rasFishery: ModuleDef = {
+  id: 'ras-fishery',
+  name: 'RAS Fishery',
+  category: 'food',
+  description: 'High-intensity recirculating aquaculture; its mineralized effluent feeds the vertical farms',
+  footprint: { w: 3, d: 2 },
+  height: 8,
+  build() {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 2, 'concreteDark');
+    // production hall
+    b.box(17, 6, 12, 'industryWhite', { x: -4.5, z: -2, y: 0.1 });
+    b.gable(17, 1.6, 12, 'steel', { x: -4.5, z: -2, y: 6.1 });
+    b.quad(4, 0.8, 'canvasTeal', { x: -4.5, z: 4.07, y: 4.6, layer: 'emissive' });
+    // outdoor grow-out tanks with visible water
+    for (let i = 0; i < 3; i++) {
+      const x = 7.5;
+      const z = -6.5 + i * 5.5;
+      b.cyl(2.2, 2.2, 'glassTint', { x, z, y: 0.1 }, 14);
+      b.disc(2.05, 'waterDeep', { x, z, y: 2.28 }, 14);
+      tube(b, { x: x - 2.2, y: 1.8, z }, { x: 4, y: 1.8, z: -2 }, 0.12, 'pipe');
+    }
+    // nutrient mineralization train -> fertilizer out
+    tank(b, 1.1, 3.4, -12.5, 6, 'leafDark');
+    tank(b, 1.1, 3.4, -9.5, 6, 'leafDark');
+    tube(b, { x: -12.5, y: 3.2, z: 6 }, { x: -9.5, y: 3.2, z: 6 }, 0.1, 'pipe');
+    b.box(2.6, 1.2, 1.6, 'soil', { x: -5.5, z: 6.4, y: 0.1 });
+    b.quad(2, 0.7, 'leaf', { x: -5.5, z: 7.25, y: 1.5 });
+    // feed silo
+    b.cyl(1, 3.2, 'cream', { x: 3.4, z: 6.2, y: 0.1 }, 10);
+    b.cone(0.1, 1, 1.1, 'cream', { x: 3.4, z: 6.2, y: 3.3 }, 10);
+    return b.merge();
+  },
+};
+
+const mycology: ModuleDef = {
+  id: 'mycology',
+  name: 'Mycology Farm',
+  category: 'food',
+  description: 'Fruiting rooms and substrate bunkers turning organic waste into mushrooms and materials',
+  footprint: { w: 2, d: 2 },
+  height: 6,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 2, 2, 'concreteDark');
+    // three quonset fruiting rooms (half-cylinders)
+    for (let i = 0; i < 3; i++) {
+      const z = -5.5 + i * 5.2;
+      const hut = new THREE.CylinderGeometry(2.4, 2.4, 12, 12, 1, false, 0, Math.PI);
+      hut.rotateZ(Math.PI / 2);
+      hut.rotateY(Math.PI / 2);
+      b.custom(hut, i === 1 ? 'creamDark' : 'industryWhite', { x: -1.5, z, y: 0.1 });
+      // end door glowing grow-room amber
+      b.quad(1.6, 1.9, 'growWarm', { x: 4.57, z, y: 0.3, ry: Math.PI / 2, layer: 'emissive' });
+    }
+    // substrate bunkers (compost bays) + straw bales
+    for (let i = 0; i < 2; i++) {
+      b.box(3.2, 1.4, 2.6, 'concrete', { x: -7.8, z: -3 + i * 5, y: 0.1 });
+      b.box(2.6, 0.9, 2, 'soil', { x: -7.8, z: -3 + i * 5, y: 0.6 });
+    }
+    for (let i = 0; i < 3; i++) b.box(1.4, 1, 1, 'canvasYellow', { x: 6.8, z: 5.5 - i * 1.6, y: 0.1, ry: rng.float(-0.2, 0.2) });
+    // little chimney vents
+    for (let i = 0; i < 3; i++) b.cyl(0.18, 1.2, 'steelDark', { x: -1.5, z: -5.5 + i * 5.2, y: 2.5 }, 6);
+    b.instance('shrub', 7.8, 0.1, -6.8, 0, 1.3);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [greenhouse, verticalFarm, aquaponics, orchard, rasFishery, mycology];
 export default modules;

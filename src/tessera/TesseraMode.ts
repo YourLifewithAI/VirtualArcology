@@ -13,7 +13,7 @@ import { getModule } from '../catalog/ModuleCatalog';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
 
-export const DEFAULT_GRID = 48;
+export const DEFAULT_GRID = 56;
 
 export class TesseraMode implements Mode {
   readonly id = 'tessera';

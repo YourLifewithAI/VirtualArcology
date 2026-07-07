@@ -432,5 +432,47 @@ const aptTower: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [aptTerrace, aptCourt, aptTower];
+
+const agentHouse: ModuleDef = {
+  id: 'agent-house',
+  name: 'Agent House (AI Commons)',
+  category: 'housing',
+  description: 'Civic housing for embodied AI citizens: rest bays, chassis library, memory vaults, and a common room humans visit',
+  footprint: { w: 3, d: 3 },
+  height: 12,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 3, 'paver');
+    // two-story bar: charcoal base (bays) + warm timber upper (commons)
+    b.box(24, 4.5, 14, 'charcoal', { z: -4, y: 0.1 });
+    b.box(24, 4.2, 14, 'timber', { z: -4, y: 4.6 });
+    b.box(24.4, 0.4, 14.4, 'steelDark', { z: -4, y: 8.8 });
+    b.box(22, 0.3, 12, 'leaf', { z: -4, y: 9.2 });
+    // ground floor: glowing rest-bay doors in a rhythm
+    for (let i = 0; i < 6; i++) {
+      const x = -10 + i * 4;
+      b.quad(2.2, 3, 'robotTeal', { x, z: 3.07, y: 0.6, layer: i % 2 ? 'emissive' : 'opaque' });
+      b.box(2.6, 0.15, 0.4, 'steel', { x, z: 3.2, y: 3.8 });
+    }
+    // upper commons: warm windows where citizens and humans meet
+    facadeWindows(b, rng, { width: 20, y0: 5.4, rows: 1, rowHeight: 3, x: 0, z: 3, ry: 0, offset: 0.08, litRatio: 0.6, windowH: 2.2 });
+    // memory-vault tower: slim, cool-glowing spine
+    b.box(4.5, 11.5, 4.5, 'concreteDark', { x: 9, z: -9, y: 0.1 });
+    for (let f = 0; f < 4; f++) b.quad(3, 0.5, 'robotTeal', { x: 9, z: -6.68, y: 2 + f * 2.4, layer: 'emissive' });
+    // chassis yard: spare embodiment shells under a canopy
+    b.box(9, 0.35, 6, 'industryWhite', { x: -9, z: 8.5, y: 3.4 });
+    for (const px of [-13, -5]) b.box(0.3, 3.4, 0.3, 'steelDark', { x: px, z: 8.5, y: 0.1 });
+    for (let i = 0; i < 3; i++) {
+      b.box(0.8, 1.6, 0.6, 'industryWhite', { x: -11.5 + i * 2.4, z: 8.5, y: 0.12 });
+      b.dome(0.32, 'charcoal', { x: -11.5 + i * 2.4, z: 8.5, y: 1.72 }, 8);
+    }
+    // charging plaza strip + trees
+    b.hquad(6, 4, 'robotTeal', { x: 6, z: 9, y: 0.14, layer: 'emissive' });
+    b.instance('tree', 13.5, 0.1, 8.5, rng.float(0, 6.28), 1.0);
+    b.instance('shrub', 0.5, 0.1, 10.5, 0, 1.3);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [aptTerrace, aptCourt, aptTower, agentHouse];
 export default modules;

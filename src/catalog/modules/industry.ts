@@ -321,5 +321,42 @@ const roboticsFab: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [chipFab, upwPlant, gasFarm, chemStorage, coolingTowers, wastewater, roboticsFab];
+
+const foundry: ModuleDef = {
+  id: 'foundry',
+  name: 'Materials Recovery & Micro-Foundry',
+  category: 'industry',
+  description: 'E-waste recovery line and induction foundry remelting scrap into robotics-fab feedstock',
+  footprint: { w: 4, d: 3 },
+  height: 12,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 4, 3, 'concreteDark');
+    // melt hall with monitor roof + glow at the door
+    b.box(18, 8, 14, 'steel', { x: -8, z: -3, y: 0.1 });
+    accentStripe(b, 18, 14, 5.5, 0.9);
+    b.box(8, 2.2, 12, 'steelDark', { x: -8, z: -3, y: 8.1 });
+    b.quad(4, 3.4, 'safetyAmber', { x: -8, z: 4.07, y: 0.4, layer: 'emissive' });
+    // stack with capped top
+    b.cyl(0.8, 11, 'steel', { x: -14.5, z: -7.5, y: 0.1 }, 10);
+    b.cyl(1, 0.7, 'charcoal', { x: -14.5, z: -7.5, y: 11.1 }, 10);
+    // sorting canopy: scrap and e-waste bunkers
+    b.box(14, 0.4, 9, 'industryWhite', { x: 9, z: -5, y: 5 });
+    for (const px of [3, 9, 15]) b.box(0.35, 5, 0.35, 'steelDark', { x: px, z: -5, y: 0.1 });
+    for (let i = 0; i < 3; i++) {
+      b.box(3.4, 1.3, 3, 'concrete', { x: 4.5 + i * 4.4, z: -5, y: 0.1 });
+      b.blob(1.1, i === 0 ? 'copper' : i === 1 ? 'steelDark' : 'charcoal', { x: 4.5 + i * 4.4, z: -5, y: 1.2 }, 0);
+    }
+    // ingot yard + gantry hoist
+    for (let i = 0; i < 6; i++) b.box(1.6, 0.4, 0.5, 'copper', { x: 3 + (i % 3) * 2.2, z: 7 + Math.floor(i / 3), y: 0.1 + Math.floor(i / 3) * 0.4 });
+    tube(b, { x: 0, y: 0, z: 9.5 }, { x: 0, y: 6.5, z: 5.5 }, 0.25, 'safetyAmber');
+    tube(b, { x: 12, y: 0, z: 9.5 }, { x: 12, y: 6.5, z: 5.5 }, 0.25, 'safetyAmber');
+    tube(b, { x: 0, y: 6.5, z: 5.5 }, { x: 12, y: 6.5, z: 5.5 }, 0.28, 'safetyAmber');
+    b.quad(1.4, 1.4, 'hazardRed', { x: -14.9, z: -3, y: 1, ry: -Math.PI / 2 });
+    if (rng.chance(0.6)) b.instance('shrub', 17, 0.1, 11, 0, 1.2);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [chipFab, upwPlant, gasFarm, chemStorage, coolingTowers, wastewater, roboticsFab, foundry];
 export default modules;
