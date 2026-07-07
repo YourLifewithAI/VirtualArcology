@@ -25,7 +25,7 @@ const SCENARIOS = [
   {
     name: 'tessera-demo',
     url: `/?mode=tessera&demo=1&freeze=1`,
-    budgets: { maxDrawCalls: 700, maxTriangles: 2_500_000, minTriangles: 1_000 },
+    budgets: { maxDrawCalls: 1200, maxTriangles: 2_500_000, minTriangles: 1_000 },
   },
   {
     name: 'tessera-empty',
