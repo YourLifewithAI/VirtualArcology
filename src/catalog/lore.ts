@@ -225,6 +225,74 @@ export const LORE: Record<string, ModuleLore> = {
     contributes:
       'Rain is routed, cleaned, and soaked — not piped away. It’s the ground-level version of the arcology’s closed water loop, and the frogs approve.',
   },
+
+  // ---- phase 2 additions ----
+  'agent-house': {
+    purpose:
+      'Civic housing for embodied AI citizens: rest and charging bays below, a warm commons above where citizens and humans actually meet, a chassis library, and a memory-vault spine.',
+    contributes:
+      'Roughly 40% of the Tessera\u2019s AI citizens live civically rather than domestically \u2014 this is their address. Their minds run in the data hall (~0.2\u20131.8 kW each); their bodies charge here on the SMR\u2019s night surplus. Equal population, equal streets.',
+  },
+  school: {
+    purpose:
+      'K-8 classrooms around a play court, with a gym, garden-lab beds, and half its curriculum outsourced to the Forge, the farms, and the fab tours.',
+    contributes:
+      'A 5,000-person Tessera has ~800 school-age kids \u2014 education was the biggest gap in Phase 1. High school is shared between neighboring tesserae; the arcology scales this to schools every few floors of every residential tier.',
+  },
+  'fire-station': {
+    purpose:
+      'Fire, EMS, and community safety under one roof: two apparatus bays, crew quarters, a drill tower, and an EMS pad.',
+    contributes:
+      'One station covers the 560 m site with sub-4-minute response. The fab and SMR bring their own regulated hazmat teams; this house covers everyone else. The arcology\u2019s version is a station per tier plus hardened refuge floors.',
+  },
+  natatorium: {
+    purpose:
+      'An indoor lap pool under a glass vault plus an outdoor pool, splash pad, and shade sails \u2014 because this is Texas.',
+    contributes:
+      'The social condenser of summer. Pre-heated by data-center waste heat that would otherwise be dumped \u2014 the smallest, most pleasant piece of the district thermal loop the arcology runs at gigawatt scale.',
+  },
+  venue: {
+    purpose:
+      'An amphitheater bowl facing a stage canopy, with a food-hall row of four kitchens and a picnic lawn \u2014 music nights, town assemblies, and whoever\u2019s cooking.',
+    contributes:
+      'Culture is infrastructure: the no-dead-cells rule says unprogrammed land becomes green space or art. The arcology inherits this as tier amphitheaters at the sky lobbies.',
+  },
+  grocery: {
+    purpose:
+      'The staples anchor: a co-op market hall for everything the greenhouses don\u2019t grow \u2014 grains, oils, coffee \u2014 with a loading nook fed from the logistics hub.',
+    contributes:
+      'Market rows sell the Tessera\u2019s own produce; the co-op closes the rest of the pantry. Its import manifest is an honest ledger of what the Tessera doesn\u2019t yet make.',
+  },
+  library: {
+    purpose:
+      'A reading hall under a glowing lantern clerestory: books, terminals, tutoring corners, and the public face of the data center next door.',
+    contributes:
+      'Every citizen \u2014 human or AI \u2014 gets a library card to the local cloud. The arcology\u2019s knowledge commons is this room repeated up ten tiers, backed by the same racks.',
+  },
+  'ras-fishery': {
+    purpose:
+      'High-intensity recirculating aquaculture: fish protein at scale, with the effluent mineralized into nutrient dosing for the vertical farms.',
+    contributes:
+      'Closes the nitrogen loop the aquaponics halls prototype: fish waste becomes tower fertilizer, displacing most imported nutrients. Protein self-sufficiency is the hardest food problem \u2014 this is the Tessera\u2019s wedge into it.',
+  },
+  mycology: {
+    purpose:
+      'Quonset fruiting rooms and substrate bunkers where the Tessera\u2019s organic waste \u2014 spent grow media, food scraps, timber offcuts \u2014 becomes mushrooms, mycelium materials, and compost.',
+    contributes:
+      'The missing decomposer trophic layer. Its outputs feed the market, the Forge (mycelium packaging and insulation), and the orchards\u2019 soil. The arcology\u2019s waste-to-energy plants get whatever the fungi refuse.',
+  },
+  foundry: {
+    purpose:
+      'An induction micro-foundry and e-waste recovery line: dead robots, boards, and scrap remelted into ingots and printer feedstock for the robotics fab and the Forge.',
+    contributes:
+      'Closes the metals loop \u2014 copper, aluminum, steel, and board-level precious metals stay in the neighborhood. Semiconductor-grade silicon honestly remains an import; the Tessera recycles everything it can and says so.',
+  },
+  'transit-hub': {
+    purpose:
+      'The Tessera\u2019s door to the region: a rail platform on the freight corridor, intercity bus bays, and the handoff to bikes, pods, and delivery robots.',
+    contributes:
+      'No cars inside doesn\u2019t mean isolation \u2014 it means the periphery works harder. Materials arrive by rail (the fab and SMR were built off this siding), people arrive by train and bus, and everything past the platform moves at neighborhood speed.',
+  },
 };
 
 export const LORE_FALLBACK: ModuleLore = {

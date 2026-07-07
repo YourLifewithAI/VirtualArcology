@@ -125,5 +125,52 @@ const waterTower: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [logisticsHub, robotDepot, waterTower];
+
+const transitHub: ModuleDef = {
+  id: 'transit-hub',
+  name: 'Transit Hub (Rail + Bus)',
+  category: 'logistics',
+  description: 'The Tessera\'s door to the region: rail platform, intercity bus bays, micro-mobility handoff',
+  footprint: { w: 5, d: 3 },
+  height: 9,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 5, 3, 'concreteDark');
+    // rail corridor along the north edge: ballast, two tracks, platform
+    b.box(48, 0.25, 5.5, 'concreteDark', { z: -11.5, y: 0 });
+    for (const tz of [-13, -10]) {
+      for (const rz of [-0.75, 0.75]) b.box(48, 0.18, 0.16, 'steelDark', { z: tz + rz * 0.5, y: 0.25 });
+      for (let i = 0; i < 16; i++) b.box(0.5, 0.1, 2, 'timberDark', { x: -22.5 + i * 3, z: tz, y: 0.2 });
+    }
+    b.box(40, 0.9, 4, 'paver', { z: -6.5, y: 0.1 });
+    // station hall: glass box under a broad timber canopy
+    b.box(20, 6, 9, 'glassTint', { x: -6, z: 0.5, y: 1, layer: 'glass' });
+    b.box(20.5, 1, 9.5, 'timber', { x: -6, z: 0.5, y: 0.1 });
+    b.box(26, 0.6, 14, 'timberDark', { x: -6, z: 0.5, y: 7.2 });
+    for (const [px, pz] of [[-17, -5.5], [5, -5.5], [-17, 6.5], [5, 6.5]] as const) b.box(0.5, 7.1, 0.5, 'timberDark', { x: px, z: pz, y: 0.1 });
+    b.quad(8, 1.1, 'windowLit', { x: -6, z: 5.31, y: 5.2, layer: 'emissive' });
+    // platform canopy over the tracks
+    b.box(30, 0.35, 4.5, 'steel', { x: -4, z: -8.8, y: 4.8 });
+    for (let i = 0; i < 4; i++) b.box(0.3, 4.8, 0.3, 'steelDark', { x: -16 + i * 8, z: -8.8, y: 0.1 });
+    // bus bays: sawtooth pull-ins + two buses
+    for (let i = 0; i < 3; i++) {
+      b.hquad(7, 4.5, 'asphalt', { x: 9 + i * 7.5, z: 6, y: 0.12 });
+      b.box(6.5, 0.3, 0.3, 'safetyAmber', { x: 9 + i * 7.5, z: 3.6, y: 0.12 });
+    }
+    for (let i = 0; i < 2; i++) {
+      const x = 9 + i * 7.5;
+      b.box(6, 2.6, 2.3, i ? 'robotTeal' : 'canvasTeal', { x, z: 6.5, y: 0.5 });
+      b.quad(5.2, 1, 'windowDark', { x, z: 7.71, y: 1.5 });
+      for (const wx of [-2, 2]) b.cyl(0.45, 0.4, 'charcoal', { x: x + wx, z: 7.8, y: 0.1 }, 8);
+    }
+    // micro-mobility handoff: pod/bike racks + robot lane tie-in
+    for (let i = 0; i < 6; i++) b.box(0.12, 0.85, 1.3, 'steelDark', { x: 8 + i * 1, z: 11.5, y: 0.12 });
+    b.hquad(10, 0.18, 'robotTeal', { x: -6, z: 12, y: 0.14 });
+    b.instance('tree', -20.5, 0.1, 11.5, rng.float(0, 6.28), 1.0);
+    b.instance('tree', 20.5, 0.1, 11.5, rng.float(0, 6.28), 1.1);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [logisticsHub, robotDepot, waterTower, transitHub];
 export default modules;

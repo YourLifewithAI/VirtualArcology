@@ -9,6 +9,8 @@ export class InfoPanel {
   /** Called when the user hits the panel's delete button. */
   onDelete: (() => void) | null = null;
   onClose: (() => void) | null = null;
+  onMove: (() => void) | null = null;
+  onRotate: (() => void) | null = null;
 
   constructor(parent: HTMLElement) {
     this.el = document.createElement('div');
@@ -31,12 +33,16 @@ export class InfoPanel {
       <h3>In the Tessera → toward the Arcology</h3>
       <p>${lore.contributes}</p>
       <div class="va-info-actions">
-        <button class="va-btn va-info-delete">Remove building</button>
+        <button class="va-btn va-info-move" title="Pick up and re-place (M)">Move</button>
+        <button class="va-btn va-info-rotate" title="Rotate in place (R)">Rotate</button>
+        <button class="va-btn va-info-delete" title="Remove (Del)">Remove</button>
       </div>
       <div class="va-info-foot">grid ${placed.x},${placed.z} · rotation ${placed.rot * 90}°</div>
     `;
     (this.el.querySelector('.va-info-close') as HTMLButtonElement).onclick = () => this.onClose?.();
     (this.el.querySelector('.va-info-delete') as HTMLButtonElement).onclick = () => this.onDelete?.();
+    (this.el.querySelector('.va-info-move') as HTMLButtonElement).onclick = () => this.onMove?.();
+    (this.el.querySelector('.va-info-rotate') as HTMLButtonElement).onclick = () => this.onRotate?.();
     this.el.style.display = '';
   }
 

@@ -10,6 +10,7 @@ import { Toolbar } from './ui/Toolbar';
 import { PalettePanel } from './ui/PalettePanel';
 import { Hud } from './ui/Hud';
 import { InfoPanel } from './ui/InfoPanel';
+import { LedgerPanel } from './ui/LedgerPanel';
 import { getModule } from './catalog/ModuleCatalog';
 import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
@@ -33,6 +34,7 @@ const persistence = new Persistence(tessera);
 
 const hud = new Hud(uiRoot, app);
 const infoPanel = new InfoPanel(uiRoot);
+const ledger = new LedgerPanel(uiRoot, tessera);
 const walkthrough = new WalkthroughController(app);
 
 placement.onInspect = (index, placed) => {
@@ -47,6 +49,10 @@ placement.onInspect = (index, placed) => {
 };
 infoPanel.onClose = () => placement.inspect(null);
 infoPanel.onDelete = () => placement.removeInspected();
+infoPanel.onMove = () => placement.startMoveInspected();
+infoPanel.onRotate = () => {
+  if (!placement.rotateInspected()) hud.showToast('No room to rotate here');
+};
 
 // pause/resume overlay
 const overlay = document.createElement('div');
@@ -87,6 +93,7 @@ function setAppMode(mode: 'tessera' | 'arcology'): void {
     arcologyPanel?.setVisible(false);
     updateHint();
   }
+  if (mode === 'arcology') ledger.setVisible(false);
   toolbar.setActiveMode(mode);
 }
 
@@ -162,6 +169,7 @@ const toolbar = new Toolbar(uiRoot, {
       tessera.setGridVisible(visible);
     };
   })(),
+  toggleLedger: () => ledger.toggle(),
   canUndo: () => placement.canUndo(),
   canRedo: () => placement.canRedo(),
 });
@@ -175,7 +183,9 @@ placement.onStateChanged = () => {
 };
 
 function updateHint(): void {
-  if (placement.selected) {
+  if (placement.isMoving) {
+    hud.setHint('<b>Click</b> drop building · <b>R</b> rotate · <b>Esc</b> put it back');
+  } else if (placement.selected) {
     hud.setHint('<b>Click</b> place · <b>R</b> rotate · <b>Right-click</b> delete · <b>Esc</b> deselect');
   } else {
     hud.setHint('<b>Click</b> a building to inspect it · pick a module from the palette to build · <b>Right-click</b> deletes');
@@ -188,7 +198,10 @@ tessera.registerAnimatable(new Robots(tessera));
 tessera.registerAnimatable(new Clouds(tessera.scene));
 
 // ---- boot layout -----------------------------------------------------------
-tessera.onLayoutChanged = () => persistence.scheduleAutosave();
+tessera.onLayoutChanged = () => {
+  persistence.scheduleAutosave();
+  ledger.refresh();
+};
 
 if (params.get('empty') === '1') {
   // start blank (harness scenario)

@@ -13,7 +13,8 @@ import type { TesseraMode } from './TesseraMode';
 
 type Command =
   | { type: 'place'; index: number; placed: PlacedModule }
-  | { type: 'remove'; index: number; placed: PlacedModule };
+  | { type: 'remove'; index: number; placed: PlacedModule }
+  | { type: 'move'; fromIndex: number; from: PlacedModule; toIndex: number; to: PlacedModule };
 
 export class PlacementController {
   private raycaster = new THREE.Raycaster();
@@ -34,6 +35,8 @@ export class PlacementController {
   /** Currently inspected placement (click a building with no palette module armed). */
   private selectedPlacementIndex: number | null = null;
   private selectionBox: THREE.Group | null = null;
+  /** Set while a building is picked up and following the cursor. */
+  private movingFrom: { index: number; placed: PlacedModule } | null = null;
 
   /** UI hook: called when selection or hover validity changes. */
   onStateChanged: (() => void) | null = null;
@@ -59,6 +62,7 @@ export class PlacementController {
 
   select(defId: string | null): void {
     if (defId && !getModule(defId)) return;
+    if (this.movingFrom) this.cancelMove();
     this.selectedId = defId;
     this.rotation = 0;
     if (defId) this.inspect(null); // arming the ghost dismisses the inspector
@@ -132,20 +136,34 @@ export class PlacementController {
   }
 
   undo(): void {
+    // undo while carrying a building first puts it back
+    if (this.movingFrom) {
+      this.cancelMove();
+      return;
+    }
     const cmd = this.undoStack.pop();
     if (!cmd) return;
     if (cmd.type === 'place') this.mode.removePlacement(cmd.index);
-    else this.mode.restorePlacement(cmd.index, cmd.placed);
+    else if (cmd.type === 'remove') this.mode.restorePlacement(cmd.index, cmd.placed);
+    else {
+      this.mode.removePlacement(cmd.toIndex);
+      this.mode.restorePlacement(cmd.fromIndex, cmd.from);
+    }
     this.redoStack.push(cmd);
     this.revalidateInspection();
     this.onStateChanged?.();
   }
 
   redo(): void {
+    if (this.movingFrom) this.cancelMove();
     const cmd = this.redoStack.pop();
     if (!cmd) return;
     if (cmd.type === 'place') this.mode.restorePlacement(cmd.index, cmd.placed);
-    else this.mode.removePlacement(cmd.index);
+    else if (cmd.type === 'remove') this.mode.removePlacement(cmd.index);
+    else {
+      this.mode.removePlacement(cmd.fromIndex);
+      this.mode.restorePlacement(cmd.toIndex, cmd.to);
+    }
     this.undoStack.push(cmd);
     this.revalidateInspection();
     this.onStateChanged?.();
@@ -271,10 +289,19 @@ export class PlacementController {
       x: this.anchor.x,
       z: this.anchor.z,
       rot: this.rotation,
-      seed: Math.floor(Math.random() * 0x7fffffff),
+      // moved buildings keep their identity (seed); new ones roll a fresh one
+      seed: this.movingFrom ? this.movingFrom.placed.seed : Math.floor(Math.random() * 0x7fffffff),
     };
     const index = this.mode.addPlacement(placed);
-    this.undoStack.push({ type: 'place', index, placed });
+    if (this.movingFrom) {
+      this.undoStack.push({ type: 'move', fromIndex: this.movingFrom.index, from: this.movingFrom.placed, toIndex: index, to: placed });
+      this.movingFrom = null;
+      this.selectedId = null;
+      this.refreshGhost();
+      this.inspect(index);
+    } else {
+      this.undoStack.push({ type: 'place', index, placed });
+    }
     if (this.undoStack.length > 100) this.undoStack.shift();
     this.redoStack = [];
     this.updateGhostPosition(); // re-validate under the ghost
@@ -301,14 +328,80 @@ export class PlacementController {
     if (this.selectedPlacementIndex !== null) this.removePlacementWithUndo(this.selectedPlacementIndex);
   }
 
+  get isMoving(): boolean {
+    return this.movingFrom !== null;
+  }
+
+  /** Pick up the inspected building: it follows the cursor as a ghost until dropped. */
+  startMoveInspected(): void {
+    const index = this.selectedPlacementIndex;
+    if (index === null || this.movingFrom) return;
+    const placed = this.mode.grid.placements[index];
+    if (!placed) return;
+    this.inspect(null);
+    this.mode.removePlacement(index);
+    this.movingFrom = { index, placed };
+    this.selectedId = placed.defId;
+    this.rotation = placed.rot;
+    this.refreshGhost();
+    this.updateGhostPosition();
+    this.onStateChanged?.();
+  }
+
+  /** Put a picked-up building back where it came from. */
+  cancelMove(): void {
+    if (!this.movingFrom) return;
+    const { index, placed } = this.movingFrom;
+    this.movingFrom = null;
+    this.selectedId = null;
+    this.refreshGhost();
+    this.mode.restorePlacement(index, placed);
+    this.inspect(index);
+    this.onStateChanged?.();
+  }
+
+  /** Rotate the inspected building in place (center-preserving) if it fits. */
+  rotateInspected(): boolean {
+    const index = this.selectedPlacementIndex;
+    if (index === null) return false;
+    const placed = this.mode.grid.placements[index];
+    if (!placed) return false;
+    const def = getModule(placed.defId)!;
+    const { w, d } = rotatedFootprint(def, placed.rot);
+    const newRot = ((placed.rot + 1) % 4) as Rotation;
+    const nf = rotatedFootprint(def, newRot);
+    const to: PlacedModule = {
+      ...placed,
+      rot: newRot,
+      x: Math.round(placed.x + w / 2 - nf.w / 2),
+      z: Math.round(placed.z + d / 2 - nf.d / 2),
+    };
+    this.mode.removePlacement(index);
+    if (!this.mode.grid.canPlace(def, to.x, to.z, to.rot)) {
+      this.mode.restorePlacement(index, placed);
+      this.inspect(index);
+      return false;
+    }
+    const toIndex = this.mode.addPlacement(to);
+    this.undoStack.push({ type: 'move', fromIndex: index, from: placed, toIndex, to });
+    this.redoStack = [];
+    this.inspect(toIndex);
+    this.onStateChanged?.();
+    return true;
+  }
+
   private onKeyDown(e: KeyboardEvent): void {
     if (this.suspended) return;
     const target = e.target as HTMLElement | null;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
     if (e.key === 'r' || e.key === 'R') {
-      this.rotate();
+      if (this.selectedId) this.rotate();
+      else if (this.selectedPlacementIndex !== null) this.rotateInspected();
+    } else if (e.key === 'm' || e.key === 'M') {
+      this.startMoveInspected();
     } else if (e.key === 'Escape') {
-      if (this.selectedPlacementIndex !== null) this.inspect(null);
+      if (this.movingFrom) this.cancelMove();
+      else if (this.selectedPlacementIndex !== null) this.inspect(null);
       else this.select(null);
     } else if (e.key === 'Delete' || e.key === 'Backspace') {
       this.removeInspected();

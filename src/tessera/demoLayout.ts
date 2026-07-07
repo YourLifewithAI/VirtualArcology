@@ -155,4 +155,91 @@ put('park', 35, 43);
 put('solar-field', 42, 43);
 put('tree-row', 39, 44);
 
+// ============================================================================
+// Phase 2 expansion (grid 48 -> 56): transit hub on the rail edge, eastern
+// civic district (school, pools, venue, library, grocery, agent houses),
+// closed-loop industry (foundry, RAS fishery, mycology), and a southern
+// housing row that closes the Phase 1 housing shortage.
+// ============================================================================
+
+// extend the street lattice east and add a southern row
+for (const z of [12, 22, 32, 42]) {
+  for (let x = 46; x <= 53; x++) put('street', x, z);
+}
+for (let z = 13; z <= 41; z++) {
+  if (z === 22 || z === 32) continue;
+  put('street', 48, z);
+}
+for (let x = 2; x <= 53; x++) put('street', x, 48);
+
+// rail edge + closed-loop industry (northeast)
+put('transit-hub', 46, 0);
+put('foundry', 48, 4);
+put('ras-fishery', 52, 4);
+put('mycology', 52, 7);
+put('battery-yard', 52, 10);
+put('solar-field', 48, 8);
+
+// eastern civic district
+put('library', 46, 13);
+put('school', 49, 13);
+put('grocery', 46, 16);
+put('natatorium', 49, 17);
+put('venue', 52, 17);
+put('tree-row', 46, 19);
+put('tree-row', 46, 20);
+
+// AI citizens' civic housing near the district
+put('agent-house', 49, 23);
+put('agent-house', 52, 23);
+
+// eastern housing infill
+put('apt-tower', 46, 23);
+put('apt-tower', 46, 26);
+put('apt-terrace', 49, 27);
+put('apt-terrace', 52, 27, 1);
+put('park', 46, 29);
+put('apt-terrace', 49, 33, 2);
+put('apt-court', 52, 33);
+put('apt-terrace', 49, 37);
+put('apt-tower', 46, 33);
+put('orchard', 46, 36);
+put('tree-row', 46, 39);
+put('tree-row', 46, 40);
+put('park', 52, 38);
+
+// east meadow food belt
+put('orchard', 46, 43);
+put('greenhouse', 49, 43);
+put('vertical-farm', 52, 43);
+
+// emergency services in the old south band gap
+put('fire-station', 15, 40);
+
+// southern housing row (z 49+)
+put('apt-court', 3, 49);
+put('apt-court', 9, 49);
+put('apt-terrace', 15, 49);
+put('apt-terrace', 19, 49);
+put('apt-court', 24, 49);
+put('apt-terrace', 30, 49, 1);
+put('apt-terrace', 34, 49);
+put('apt-court', 39, 49);
+put('apt-tower', 44, 49);
+put('agent-house', 47, 49);
+put('apt-terrace', 51, 49, 3);
+
+// far-south green edge
+put('park', 4, 53);
+put('orchard', 10, 53);
+put('park', 16, 53);
+for (let x = 20; x <= 27; x++) put('bioswale', x, 53);
+put('park', 30, 53);
+put('orchard', 36, 53);
+put('solar-canopy', 40, 53);
+put('orchard', 44, 53);
+put('tree-row', 48, 53);
+put('tree-row', 49, 53);
+put('vertical-farm', 52, 53);
+
 export const DEMO_LAYOUT: PlacedModule[] = L;

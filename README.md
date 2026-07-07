@@ -26,19 +26,28 @@ The app opens on a demo neighborhood. Build your own:
 | Input | Action |
 |---|---|
 | Left click | Place selected module |
-| **R** | Rotate before placing |
+| **R** | Rotate (ghost before placing, or a selected building in place) |
 | Right click | Delete module under cursor |
 | **Esc** | Deselect |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo |
+| **M** | Pick up the selected building and move it |
+| **Del** | Remove the selected building |
 | **Tab** or 🚶 Walk | Enter first-person walkthrough |
 | Drag / scroll | Orbit / zoom |
 
-The palette covers housing, civic space, food production (greenhouses,
-vertical farms), energy (solar, batteries, substation, SMR), the full
-chip-fab support chain (cleanroom, ultrapure water, gas farm, chemical
-storage, cooling, wastewater), a robotics fab, compute, logistics and
-streetscape. Delivery robots route themselves over any `Street` modules
-you lay down.
+The palette covers 44 modules: housing (including the **Agent House**,
+civic quarters for embodied AI citizens), civic space (school, emergency
+services, pools, venue, grocery, library...), food production (greenhouses,
+vertical farms, RAS fishery, mycology), energy (solar, batteries,
+substation, SMR), the full chip-fab support chain, a robotics fab and
+materials-recovery foundry, compute, logistics (including the rail + bus
+**Transit Hub**) and streetscape. Delivery robots route themselves over any
+`Street` modules you lay down.
+
+**Click any placed building** to inspect its purpose and lore — then Move,
+Rotate, or Remove it. The **Ledger** toolbar button shows live economics of
+everything placed (population, jobs, energy, compute, food coverage, capex),
+sourced from [`docs/tessera-economics.md`](docs/tessera-economics.md).
 
 **Save/Load** exports the layout as JSON (and autosaves to your browser).
 
