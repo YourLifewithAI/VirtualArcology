@@ -9,6 +9,7 @@ export const CATEGORIES = [
   'industry',
   'compute',
   'logistics',
+  'water',
   'landscape',
 ] as const;
 
@@ -21,7 +22,8 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   energy: 'Energy',
   industry: 'Industry & Fabs',
   compute: 'Compute',
-  logistics: 'Logistics & Water',
+  logistics: 'Logistics & Transit',
+  water: 'Water & Treatment',
   landscape: 'Streets & Green',
 };
 

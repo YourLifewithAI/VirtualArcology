@@ -51,12 +51,23 @@ where the street network actually connects, and the **Roads** toolbar
 toggle shows exactly that: teal streets reach the transit network, red
 streets are islands (with a toast tallying the gaps).
 
+Two more overlays complete the audit set: **Food** draws the food web —
+green links between controlled-environment food buildings (greenhouses,
+vertical farms, aquaponics, fisheries, mycology) that sit close enough to
+interconnect their water, nutrient, and substrate loops, with amber flags
+on isolated ones. **Terrain** hides the paver site pad so unused cells show
+the regional ground right through the grid (buildings keep their own pads);
+toggle it back for the full-slab look.
+
 **Click any placed building** to inspect its purpose and lore — then Move,
 Rotate, or Remove it, or open the **⚡ Utilities** tab for its energy, compute
-(residents modeled as AI power users), water and wastewater detail. The
-**Ledger** toolbar button shows live economics of everything placed (site
-area, population, jobs, energy, compute, water balance, food coverage,
-capex), sourced from [`docs/tessera-economics.md`](docs/tessera-economics.md).
+(residents modeled as AI power users), water, wastewater, and transit/delivery
+capacity detail. The **Ledger** toolbar button shows live economics of
+everything placed — population, jobs, energy, export income (energy + spare
+compute), water balance by end use, transit & delivery capacity vs demand,
+fresh-produce coverage, capex — and **every row expands on click** into the
+per-building math behind the number, sourced from
+[`docs/tessera-economics.md`](docs/tessera-economics.md).
 
 **Pipes** toggles the underground-infrastructure x-ray — and every line is
 *routed*: service stubs run to the street, then follow the street network to
@@ -112,7 +123,8 @@ extracted from the Arcology Knowledge Node at lifewithai.ai.
 `?xray=1` · `?shafts=1` · `?cut=0.45` (cutaway fraction) · `?freeze=1`
 (pause ambient animation) · `?theme=neon-night` (architectural theme) ·
 `?biome=desert` (regional archetype) · `?pipes=1` (underground view) ·
-`?roads=1` (street-connectivity overlay)
+`?roads=1` (street connectivity) · `?food=1` (food web) ·
+`?ground=terrain` (see-through site pad)
 
 ## Deploying to GitHub Pages
 

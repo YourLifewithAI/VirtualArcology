@@ -1,4 +1,4 @@
-/** Logistics & water modules. */
+/** Logistics & transit modules (plus the water tower, categorized under water). */
 import type { ModuleDef } from '../types';
 import { PartsBuilder } from '../../core/geo';
 import { facadeWindows, groundSlab, solarRoof, tank, tube } from '../parts';
@@ -93,7 +93,7 @@ const robotDepot: ModuleDef = {
 const waterTower: ModuleDef = {
   id: 'water-tower',
   name: 'Water Tower & Treatment',
-  category: 'logistics',
+  category: 'water',
   description: 'Elevated tank on legs with a small treatment shed',
   footprint: { w: 2, d: 2 },
   height: 19,

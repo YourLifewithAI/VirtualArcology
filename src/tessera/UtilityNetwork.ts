@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { CELL_SIZE } from './Grid';
 import { getModule } from '../catalog/ModuleCatalog';
+import { STATS, type ModuleStats } from '../catalog/stats';
 import { rotatedFootprint } from './Grid';
 import type { TesseraMode } from './TesseraMode';
 
@@ -21,6 +22,14 @@ const UTILITIES = [
   { key: 'sewer', color: 0x9c7a4d, depth: -2.1, r: 0.4, sinks: ['wastewater'] },
   { key: 'fiber', color: 0x2ee6d6, depth: -2.7, r: 0.18, sinks: ['data-center', 'comms-mast'] },
 ] as const;
+
+/** A building only gets a service stub for utilities its stats say it touches. */
+const NEEDS_UTILITY: Record<(typeof UTILITIES)[number]['key'], (s: ModuleStats | undefined) => boolean> = {
+  power: (s) => !s || !!(s.useMW || s.genMW),
+  water: (s) => !s || !!s.waterM3d,
+  sewer: (s) => !s || !!s.sewerM3d,
+  fiber: (s) => !s || !!(s.computePF || s.computeUsePF),
+};
 
 const DISCONNECT_COLOR = 0xff4455;
 /** Max cell distance from a building to its street hookup. */
@@ -199,6 +208,7 @@ export class UtilityNetwork {
       const usedEdges = new Set<string>();
       for (const b of buildings) {
         if ((u.sinks as readonly string[]).includes(b.defId)) continue; // the plant is the sink
+        if (!NEEDS_UTILITY[u.key](STATS[b.defId])) continue; // no draw/supply of this utility
         const hooks = hookups(b);
         let entry = -1;
         let entryDist = Infinity;

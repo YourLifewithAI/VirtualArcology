@@ -170,3 +170,33 @@ Rack share $10–100M + embodiments ~$100M (~$50k each) + agent houses ~$20M ≈
 # Addendum: Phase 2 build-out (implemented in the demo)
 
 Grid expanded 48→56. Added: transit hub on a rail siding (north edge), K-8 school, emergency services station, natatorium, venue & food-hall row, grocery co-op, library, RAS fishery (effluent → vertical-farm nutrients), mycology farm (organic waste → food/materials), materials-recovery micro-foundry (scrap/e-waste → robotics feedstock), 3 Agent Houses, and a southern housing row (+~620 units → ~1,550 homes ≈ 3,400 residents). The in-app **Ledger** computes population, jobs, energy, compute, food coverage, and capex live from whatever is placed, using this document's per-module figures (`src/catalog/stats.ts`).
+
+---
+
+# Addendum: Phase 6 — export revenue, transit capacity, and the water ledger
+
+## Export revenue assumptions (shown live in the Ledger)
+
+| Stream | Price basis | Formula |
+|---|---|---|
+| **Energy export** | $35/MWh wholesale (ERCOT-ish long-run average; firm SMR power can contract higher, solar-heavy surplus clears lower) | surplus MW × 8,760 h/yr × $35/MWh |
+| **Compute export** | $1.00/PFLOP-hour FP8 (bulk inference capacity, wholesale; retail API pricing is several times higher — this is the conservative pipe-rental number) | surplus PFLOPS × 8,760 h/yr × $1.00/PF·h |
+
+Demo scale: ~243 MW net electrical surplus → **~$75M/yr**; ~23 EFLOPS spare FP8 → **~$200M/yr**. Together they pay the ~$5.7B capex back on a ~20-year horizon before counting rent, fab output, or produce — the Tessera is an exporter by construction.
+
+## Transit & delivery capacity model
+
+Most in-Tessera trips are walked (that is the point of a 5-minute neighborhood), so motorized demand is modeled at **1.6 trips/resident/day** (regional trips, mobility-limited residents, weather, freight-adjacent errands). Parcel demand is **0.9 deliveries/resident/day**.
+
+| Module | Capacity | Basis |
+|---|---|---|
+| AV Shuttle Depot | 1,800 trips/day | ~8 six-seaters × ~150 trips/day each at neighborhood speeds, 20 h service |
+| Transit Hub (rail + bus) | 6,000 trips/day | 2-track regional rail + 3 bus bays, peak-spread |
+| Delivery Robot Depot | 1,500 parcels/day | ~18 robots × ~85 drops/day |
+| Logistics Hub | 4,000 parcels/day | dock-door feeder that breaks regional freight into robot loads |
+
+The Ledger compares Σ capacity against population demand per stream; the per-building **⚡ Utilities** tab shows how many residents each depot serves.
+
+## The water ledger, by end use
+
+Water now has its own build category (water tower & treatment, wastewater plant, UPW plant, bioswales) and the Ledger's Water/Wastewater rows expand into per-building demand vs capacity. Demo-scale orientation, from `stats.ts`: the chip fab dominates at 900 m³/d (plus 300 m³/d cooling towers and 100 m³/d UPW), the SMR draws 500, farms ~100 total (greenhouses 15 each, vertical farms 12, RAS fishery 45, aquaponics 20, mycology 8, orchards 4), residential ~48 m³/d per 1,000 homes (≈34 L/resident/day of indoor potable — dry-fixture, greywater-recycling assumptions), parks/plazas 3 each. Industrial water is the design pressure, not showers.
