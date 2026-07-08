@@ -77,7 +77,7 @@ const chipFab: ModuleDef = {
 const upwPlant: ModuleDef = {
   id: 'upw-plant',
   name: 'Ultrapure Water Plant',
-  category: 'industry',
+  category: 'water',
   description: 'RO/DI cylinder trains feeding the fab by pipe bridge',
   footprint: { w: 4, d: 4 },
   height: 13,
@@ -231,7 +231,7 @@ const coolingTowers: ModuleDef = {
 const wastewater: ModuleDef = {
   id: 'wastewater',
   name: 'Wastewater Treatment',
-  category: 'industry',
+  category: 'water',
   description: 'Clarifier basins with rotating bridge arms and a digester dome',
   footprint: { w: 4, d: 4 },
   height: 8,

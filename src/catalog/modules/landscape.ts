@@ -104,7 +104,7 @@ const treeRow: ModuleDef = {
 const bioswale: ModuleDef = {
   id: 'bioswale',
   name: 'Bioswale Canal',
-  category: 'landscape',
+  category: 'water',
   description: 'Sunken stormwater channel with reeds and a footbridge',
   footprint: { w: 1, d: 1 },
   height: 1.2,

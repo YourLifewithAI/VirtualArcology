@@ -3,7 +3,7 @@
  * Shows energy, compute (residents modeled as AI power users), water and
  * wastewater for the selected building, with shares of Tessera capacity.
  */
-import { STATS } from '../catalog/stats';
+import { PARCELS_PER_RESIDENT, STATS, TRIPS_PER_RESIDENT } from '../catalog/stats';
 import type { ModuleDef } from '../catalog/types';
 
 export class UtilitiesPanel {
@@ -41,6 +41,15 @@ export class UtilitiesPanel {
     const sewer = s.sewerM3d ?? 0;
     if (sewer >= 0) row('Wastewater out', sewer ? `${sewer.toLocaleString()} m³/day` : '—');
     else row('Treatment capacity', `${(-sewer).toLocaleString()} m³/day`);
+
+    if (s.tripsDay) {
+      row('Transit capacity', `${s.tripsDay.toLocaleString()} trips/day`);
+      row('· serves', `~${Math.round(s.tripsDay / TRIPS_PER_RESIDENT).toLocaleString()} residents at ${TRIPS_PER_RESIDENT} trips/day`);
+    }
+    if (s.parcelsDay) {
+      row('Delivery capacity', `${s.parcelsDay.toLocaleString()} parcels/day`);
+      row('· serves', `~${Math.round(s.parcelsDay / PARCELS_PER_RESIDENT).toLocaleString()} residents at ${PARCELS_PER_RESIDENT} parcels/day`);
+    }
 
     row('Capital cost', s.capexM >= 1000 ? `$${(s.capexM / 1000).toFixed(1)}B` : `$${s.capexM}M`);
     if (s.jobs) row('Jobs', `${s.jobs}`);

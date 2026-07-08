@@ -45,6 +45,7 @@ if (params.get('freeze') === '1') app.animate = false;
 const tessera = new TesseraMode(app);
 tessera.refreshTheme(themeName); // lighting env (nothing placed yet, so this is cheap)
 if (biomeName !== 'temperate') tessera.setBiome(biomeName);
+if ((params.get('ground') ?? localStorage.getItem('va-ground')) === 'terrain') tessera.setGroundStyle('terrain');
 const placement = new PlacementController(app, tessera);
 const persistence = new Persistence(tessera);
 
@@ -235,6 +236,26 @@ const toolbar = new Toolbar(uiRoot, {
     }
     return tessera.roadView;
   },
+  toggleFood: () => {
+    tessera.setFoodView(!tessera.foodView);
+    if (tessera.foodView) {
+      const { clusters, integrated, isolated } = tessera.foodStats;
+      hud.showToast(
+        integrated + isolated === 0
+          ? 'No food buildings yet — place greenhouses, farms, fisheries…'
+          : isolated > 0
+            ? `${integrated} food buildings linked in ${clusters} cluster${clusters === 1 ? '' : 's'} · ${isolated} isolated (amber flags)`
+            : `All ${integrated} food buildings interconnected in ${clusters} cluster${clusters === 1 ? '' : 's'}`,
+      );
+    }
+    return tessera.foodView;
+  },
+  toggleTerrain: () => {
+    const style = tessera.groundStyle === 'slab' ? 'terrain' : 'slab';
+    tessera.setGroundStyle(style);
+    localStorage.setItem('va-ground', style);
+    return style === 'terrain';
+  },
   newSite: () => {
     if (walkthrough.state !== 'off') walkthrough.exit();
     placement.select(null);
@@ -307,6 +328,11 @@ if (params.get('empty') === '1') {
 placement.resetHistory();
 if (params.get('pipes') === '1') tessera.setUtilityView(true);
 if (params.get('roads') === '1') tessera.setRoadView(true);
+if (params.get('food') === '1') tessera.setFoodView(true);
+toolbar.setToggleState('pipes', tessera.utilityView);
+toolbar.setToggleState('roads', tessera.roadView);
+toolbar.setToggleState('food', tessera.foodView);
+toolbar.setToggleState('terrain', tessera.groundStyle === 'terrain');
 
 if (params.get('mode') === 'arcology') {
   const arc = ensureArcology();

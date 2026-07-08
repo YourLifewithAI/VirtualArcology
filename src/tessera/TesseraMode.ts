@@ -12,6 +12,7 @@ import { buildModuleGroup, type InstanceRequest } from '../core/geo';
 import { getModule } from '../catalog/ModuleCatalog';
 import { clearInstancedPartCache } from '../catalog/parts';
 import { BiomeLayer } from './BiomeLayer';
+import { FoodWeb } from './FoodWeb';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
 import { RoadNetwork } from './RoadNetwork';
@@ -30,13 +31,19 @@ export class TesseraMode implements Mode {
   private groundMeshes: THREE.Object3D[] = [];
   private utilities: UtilityNetwork;
   private roads: RoadNetwork;
+  private foodWeb: FoodWeb;
   private biomes: BiomeLayer;
+  private slab: THREE.Mesh | null = null;
   /** Active regional archetype (BIOMES key). */
   biome = 'temperate';
+  /** 'slab' = paver site pad; 'terrain' = see-through to the biome ground. */
+  groundStyle: 'slab' | 'terrain' = 'slab';
   /** True while the underground-infrastructure x-ray view is active. */
   utilityView = false;
   /** True while the street-connectivity overlay is active. */
   roadView = false;
+  /** True while the food-web overlay is active. */
+  foodView = false;
   private ghostMat = new THREE.MeshBasicMaterial({
     color: 0xbcd4e6,
     transparent: true,
@@ -53,6 +60,7 @@ export class TesseraMode implements Mode {
     this.layoutVersion++;
     if (this.utilityView) this.utilities.setVisible(true);
     if (this.roadView) this.roads.setVisible(true);
+    if (this.foodView) this.foodWeb.setVisible(true);
     this.onLayoutChanged?.();
   }
 
@@ -61,6 +69,7 @@ export class TesseraMode implements Mode {
     this.pools = new InstancePools(this.scene);
     this.utilities = new UtilityNetwork(this);
     this.roads = new RoadNetwork(this);
+    this.foodWeb = new FoodWeb(this);
 
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
@@ -107,6 +116,8 @@ export class TesseraMode implements Mode {
     );
     slab.position.y = -0.1;
     slab.receiveShadow = true;
+    slab.visible = this.groundStyle === 'slab';
+    this.slab = slab;
     this.scene.add(slab);
 
     // rectangle-capable cell lattice
@@ -185,6 +196,23 @@ export class TesseraMode implements Mode {
   /** Valid while the road view is on. */
   get roadStats(): { disconnected: number; total: number } {
     return { disconnected: this.roads.disconnected, total: this.roads.totalStreets };
+  }
+
+  /** Food-web overlay (green links between interconnected food buildings). */
+  setFoodView(on: boolean): void {
+    this.foodView = on;
+    this.foodWeb.setVisible(on);
+  }
+
+  /** Valid while the food view is on. */
+  get foodStats(): { clusters: number; integrated: number; isolated: number } {
+    return { clusters: this.foodWeb.clusters, integrated: this.foodWeb.integrated, isolated: this.foodWeb.isolated };
+  }
+
+  /** 'terrain' hides the paver site pad so unused cells show the biome ground. */
+  setGroundStyle(style: 'slab' | 'terrain'): void {
+    this.groundStyle = style;
+    if (this.slab) this.slab.visible = style === 'slab';
   }
 
   /** Replace the site with an empty grid of the given cell dimensions. */
@@ -305,7 +333,12 @@ export class TesseraMode implements Mode {
       const placed = this.grid.placements[index]!;
       this.grid.remove(getModule(placed.defId)!, index);
       const group = this.moduleGroups.get(index);
-      if (group) this.scene.remove(group);
+      if (group) {
+        this.scene.remove(group);
+        group.traverse((o) => {
+          if (o instanceof THREE.Mesh) o.geometry.dispose();
+        });
+      }
     }
     this.moduleGroups.clear();
     this.rebuildInstances();

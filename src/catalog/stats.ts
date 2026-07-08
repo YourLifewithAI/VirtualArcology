@@ -26,7 +26,27 @@ export interface ModuleStats {
   sewerM3d?: number;
   /** Food output, t/yr. */
   foodT?: number;
+  /** Passenger transit capacity, trips/day (AV depots, transit hub). */
+  tripsDay?: number;
+  /** Delivery capacity, parcels/day (robot depots, logistics hub). */
+  parcelsDay?: number;
 }
+
+// ---- economics assumptions (documented in docs/tessera-economics.md) -------
+/** Wholesale power price, $/MWh (ERCOT-ish long-run average). */
+export const ENERGY_PRICE_MWH = 35;
+/** Wholesale compute price, $/PFLOP-hour FP8 (bulk inference capacity). */
+export const COMPUTE_PRICE_PF_HR = 1.0;
+/** Motorized trips per resident per day (most trips inside a Tessera are walked). */
+export const TRIPS_PER_RESIDENT = 1.6;
+/** Parcel deliveries per resident per day. */
+export const PARCELS_PER_RESIDENT = 0.9;
+/** Fresh produce consumption, t/resident/yr. */
+export const PRODUCE_T_PER_RESIDENT = 0.25;
+/** Average household size. */
+export const RESIDENTS_PER_HOME = 2.2;
+/** Labor-force participation. */
+export const LABOR_PARTICIPATION = 0.55;
 
 export const STATS: Record<string, ModuleStats> = {
   // housing
@@ -36,11 +56,11 @@ export const STATS: Record<string, ModuleStats> = {
   'agent-house': { capexM: 8, jobs: 4, aiHomes: 350, useMW: 0.13, computeUsePF: 875, waterM3d: 5, sewerM3d: 4 },
 
   // civic
-  plaza: { capexM: 3, waterM3d: 3, sewerM3d: 1 },
-  'market-row': { capexM: 0.4, jobs: 6, waterM3d: 2, sewerM3d: 1.8 },
+  plaza: { capexM: 3, useMW: 0.02, waterM3d: 3, sewerM3d: 1 },
+  'market-row': { capexM: 0.4, jobs: 6, useMW: 0.02, waterM3d: 2, sewerM3d: 1.8 },
   clinic: { capexM: 4, jobs: 30, useMW: 0.05, computeUsePF: 15, waterM3d: 15, sewerM3d: 14 },
   makerspace: { capexM: 3.5, jobs: 8, useMW: 0.08, computeUsePF: 12, waterM3d: 4, sewerM3d: 3.5 },
-  commons: { capexM: 2, jobs: 3, computeUsePF: 5, waterM3d: 3, sewerM3d: 2.7 },
+  commons: { capexM: 2, jobs: 3, useMW: 0.03, computeUsePF: 5, waterM3d: 3, sewerM3d: 2.7 },
   school: { capexM: 30, jobs: 40, useMW: 0.1, computeUsePF: 20, waterM3d: 10, sewerM3d: 9 },
   'fire-station': { capexM: 15, jobs: 30, useMW: 0.03, computeUsePF: 5, waterM3d: 6, sewerM3d: 5 },
   natatorium: { capexM: 20, jobs: 8, useMW: 0.15, waterM3d: 60, sewerM3d: 45 },
@@ -59,7 +79,7 @@ export const STATS: Record<string, ModuleStats> = {
   // energy
   'solar-canopy': { capexM: 0.12, genMW: 0.01 },
   'solar-field': { capexM: 0.3, genMW: 0.05 },
-  'battery-yard': { capexM: 1.3 },
+  'battery-yard': { capexM: 1.3, useMW: 0.05 },
   substation: { capexM: 10, jobs: 2, computeUsePF: 2, waterM3d: 1, sewerM3d: 0.5 },
   smr: { capexM: 2500, jobs: 70, genMW: 270, computeUsePF: 30, waterM3d: 500, sewerM3d: 50 },
 
@@ -67,7 +87,7 @@ export const STATS: Record<string, ModuleStats> = {
   'chip-fab': { capexM: 2000, jobs: 350, useMW: 10, computeUsePF: 150, waterM3d: 900, sewerM3d: 700 },
   'upw-plant': { capexM: 60, jobs: 10, useMW: 1, computeUsePF: 5, waterM3d: 100, sewerM3d: 80 },
   'gas-farm': { capexM: 30, jobs: 6, useMW: 0.3, waterM3d: 10, sewerM3d: 8 },
-  'chem-storage': { capexM: 10, jobs: 4, waterM3d: 2, sewerM3d: 1 },
+  'chem-storage': { capexM: 10, jobs: 4, useMW: 0.02, waterM3d: 2, sewerM3d: 1 },
   'cooling-towers': { capexM: 15, jobs: 2, useMW: 0.5, waterM3d: 300, sewerM3d: 60 },
   wastewater: { capexM: 40, jobs: 8, useMW: 0.8, computeUsePF: 3, waterM3d: 5, sewerM3d: -1500 },
   'robotics-fab': { capexM: 200, jobs: 140, useMW: 1.5, computeUsePF: 200, waterM3d: 60, sewerM3d: 50 },
@@ -75,14 +95,14 @@ export const STATS: Record<string, ModuleStats> = {
 
   // compute
   'data-center': { capexM: 160, jobs: 18, useMW: 5, computePF: 30000, computeUsePF: 0, waterM3d: 60, sewerM3d: 20 },
-  'comms-mast': { capexM: 2 },
+  'comms-mast': { capexM: 2, useMW: 0.02 },
 
-  // logistics
-  'logistics-hub': { capexM: 8, jobs: 25, useMW: 0.1, computeUsePF: 10, waterM3d: 8, sewerM3d: 7 },
-  'robot-depot': { capexM: 0.5, jobs: 2, useMW: 0.05, waterM3d: 1, sewerM3d: 0.8 },
-  'av-depot': { capexM: 4, jobs: 3, useMW: 0.35, computeUsePF: 5, waterM3d: 1.5, sewerM3d: 1.2 },
+  // logistics & transit
+  'logistics-hub': { capexM: 8, jobs: 25, useMW: 0.1, computeUsePF: 10, waterM3d: 8, sewerM3d: 7, parcelsDay: 4000 },
+  'robot-depot': { capexM: 0.5, jobs: 2, useMW: 0.05, waterM3d: 1, sewerM3d: 0.8, parcelsDay: 1500 },
+  'av-depot': { capexM: 4, jobs: 3, useMW: 0.35, computeUsePF: 5, waterM3d: 1.5, sewerM3d: 1.2, tripsDay: 1800 },
   'water-tower': { capexM: 6, jobs: 2, useMW: 0.1, waterM3d: -1200, sewerM3d: 1 },
-  'transit-hub': { capexM: 35, jobs: 20, useMW: 0.15, computeUsePF: 8, waterM3d: 10, sewerM3d: 9 },
+  'transit-hub': { capexM: 35, jobs: 20, useMW: 0.15, computeUsePF: 8, waterM3d: 10, sewerM3d: 9, tripsDay: 6000 },
 
   // landscape
   street: { capexM: 0.06 },
@@ -112,6 +132,16 @@ export interface LedgerTotals {
   foodT: number;
   /** Fraction of residents' fresh produce covered (1 = 100%). */
   foodCoverage: number;
+  /** Passenger transit capacity vs demand, trips/day. */
+  tripsCap: number;
+  tripsDemand: number;
+  /** Delivery capacity vs demand, parcels/day. */
+  parcelsCap: number;
+  parcelsDemand: number;
+  /** Income from exported surplus energy, $M/yr (0 if net importer). */
+  energyExportMYr: number;
+  /** Income from exported surplus compute, $M/yr (0 if in deficit). */
+  computeExportMYr: number;
 }
 
 export function computeLedger(defIds: string[]): LedgerTotals {
@@ -133,6 +163,12 @@ export function computeLedger(defIds: string[]): LedgerTotals {
     sewerCapM3d: 0,
     foodT: 0,
     foodCoverage: 0,
+    tripsCap: 0,
+    tripsDemand: 0,
+    parcelsCap: 0,
+    parcelsDemand: 0,
+    energyExportMYr: 0,
+    computeExportMYr: 0,
   };
   for (const id of defIds) {
     const s = STATS[id];
@@ -145,6 +181,9 @@ export function computeLedger(defIds: string[]): LedgerTotals {
     t.useMW += s.useMW ?? 0;
     t.computePF += s.computePF ?? 0;
     t.computeUsePF += s.computeUsePF ?? 0;
+    t.foodT += s.foodT ?? 0;
+    t.tripsCap += s.tripsDay ?? 0;
+    t.parcelsCap += s.parcelsDay ?? 0;
     const w = s.waterM3d ?? 0;
     if (w >= 0) t.waterUseM3d += w;
     else t.waterCapM3d += -w;
@@ -152,11 +191,14 @@ export function computeLedger(defIds: string[]): LedgerTotals {
     if (sw >= 0) t.sewerUseM3d += sw;
     else t.sewerCapM3d += -sw;
   }
-  t.humans = Math.round(t.homes * 2.2);
-  t.laborForce = Math.round(t.humans * 0.55);
+  t.humans = Math.round(t.homes * RESIDENTS_PER_HOME);
+  t.laborForce = Math.round(t.humans * LABOR_PARTICIPATION);
   // one domestic embodiment alcove per dwelling unit
   t.aiDomestic = t.homes;
-  // residents eat ~0.25 t of fresh produce per year
-  t.foodCoverage = t.humans > 0 ? t.foodT / (t.humans * 0.25) : 0;
+  t.foodCoverage = t.humans > 0 ? t.foodT / (t.humans * PRODUCE_T_PER_RESIDENT) : 0;
+  t.tripsDemand = Math.round(t.humans * TRIPS_PER_RESIDENT);
+  t.parcelsDemand = Math.round(t.humans * PARCELS_PER_RESIDENT);
+  t.energyExportMYr = (Math.max(0, t.genMW - t.useMW) * 8760 * ENERGY_PRICE_MWH) / 1e6;
+  t.computeExportMYr = (Math.max(0, t.computePF - t.computeUsePF) * COMPUTE_PRICE_PF_HR * 8760) / 1e6;
   return t;
 }
