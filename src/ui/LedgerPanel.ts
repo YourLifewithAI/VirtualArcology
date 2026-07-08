@@ -101,12 +101,17 @@ export class LedgerPanel {
     }
     const aiHoused = t.aiDomestic + t.aiCivic;
     const netMW = t.genMW - t.useMW;
+    // NB: breakdown rows print "count × fmt(per) = fmt(total)", so every
+    // formatter must keep enough precision at small values for the printed
+    // equation to actually hold (street capex $60k, robot-depot sewer 0.8 m³/d…)
     const fmtMW: Fmt = (v) => (Math.abs(v) >= 1 ? `${v.toFixed(v >= 100 ? 0 : 1)} MW` : `${Math.round(v * 1000)} kW`);
-    const fmtM3: Fmt = (v) => `${Math.round(v).toLocaleString()} m³/d`;
+    const fmtM3: Fmt = (v) => (Math.abs(v) >= 10 ? `${Math.round(v).toLocaleString()} m³/d` : `${v.toFixed(1)} m³/d`);
     const fmtPF: Fmt = (v) => (Math.abs(v) >= 1000 ? `${(v / 1000).toFixed(1)} EF` : `${v.toLocaleString()} PF`);
-    const fmtT: Fmt = (v) => `${Math.round(v).toLocaleString()} t/yr`;
+    const fmtT: Fmt = (v) => (Math.abs(v) >= 10 ? `${Math.round(v).toLocaleString()} t/yr` : `${v.toFixed(1)} t/yr`);
     const fmtN: Fmt = (v) => v.toLocaleString();
-    const fmtCap: Fmt = (v) => (v >= 1000 ? `$${(v / 1000).toFixed(2)}B` : `$${v.toFixed(v >= 10 ? 0 : 1)}M`);
+    const fmtCap: Fmt = (v) =>
+      v >= 1000 ? `$${(v / 1000).toFixed(2)}B` : v >= 1 ? `$${v.toFixed(v >= 10 ? 0 : 1)}M` : `$${Math.round(v * 1000)}k`;
+    const fmtIncome: Fmt = (v) => (v >= 10 ? `~$${v.toFixed(0)}M/yr` : v >= 0.95 ? `~$${v.toFixed(1)}M/yr` : `~$${Math.max(1, Math.round(v * 1000))}k/yr`);
     const capex = fmtCap(t.capexM);
     const ef = t.computePF / 1000;
     const surplusPF = Math.max(0, t.computePF - t.computeUsePF);
@@ -167,7 +172,7 @@ export class LedgerPanel {
       },
       {
         label: 'Energy export income',
-        value: netMW > 0 ? `~$${t.energyExportMYr.toFixed(0)}M/yr` : '—',
+        value: netMW > 0 ? fmtIncome(t.energyExportMYr) : '—',
         cls: netMW > 0 ? 'good' : '',
         bd: {
           body: netMW > 0 ? `<div class="bd-row"><span>${fmtMW(netMW)} surplus</span><span>× 8,760 h × $${ENERGY_PRICE_MWH}/MWh</span></div>` : '<div class="bd-row muted"><span>no surplus to sell</span><span></span></div>',
@@ -193,7 +198,7 @@ export class LedgerPanel {
       },
       {
         label: 'Compute export income',
-        value: surplusPF > 0 ? `~$${t.computeExportMYr.toFixed(0)}M/yr` : '—',
+        value: surplusPF > 0 ? fmtIncome(t.computeExportMYr) : '—',
         cls: surplusPF > 0 ? 'good' : '',
         bd: {
           body: surplusPF > 0 ? `<div class="bd-row"><span>${fmtPF(surplusPF)} surplus</span><span>× 8,760 h × $${COMPUTE_PRICE_PF_HR.toFixed(2)}/PF·h</span></div>` : '<div class="bd-row muted"><span>no surplus to sell</span><span></span></div>',

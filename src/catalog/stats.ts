@@ -56,11 +56,11 @@ export const STATS: Record<string, ModuleStats> = {
   'agent-house': { capexM: 8, jobs: 4, aiHomes: 350, useMW: 0.13, computeUsePF: 875, waterM3d: 5, sewerM3d: 4 },
 
   // civic
-  plaza: { capexM: 3, waterM3d: 3, sewerM3d: 1 },
-  'market-row': { capexM: 0.4, jobs: 6, waterM3d: 2, sewerM3d: 1.8 },
+  plaza: { capexM: 3, useMW: 0.02, waterM3d: 3, sewerM3d: 1 },
+  'market-row': { capexM: 0.4, jobs: 6, useMW: 0.02, waterM3d: 2, sewerM3d: 1.8 },
   clinic: { capexM: 4, jobs: 30, useMW: 0.05, computeUsePF: 15, waterM3d: 15, sewerM3d: 14 },
   makerspace: { capexM: 3.5, jobs: 8, useMW: 0.08, computeUsePF: 12, waterM3d: 4, sewerM3d: 3.5 },
-  commons: { capexM: 2, jobs: 3, computeUsePF: 5, waterM3d: 3, sewerM3d: 2.7 },
+  commons: { capexM: 2, jobs: 3, useMW: 0.03, computeUsePF: 5, waterM3d: 3, sewerM3d: 2.7 },
   school: { capexM: 30, jobs: 40, useMW: 0.1, computeUsePF: 20, waterM3d: 10, sewerM3d: 9 },
   'fire-station': { capexM: 15, jobs: 30, useMW: 0.03, computeUsePF: 5, waterM3d: 6, sewerM3d: 5 },
   natatorium: { capexM: 20, jobs: 8, useMW: 0.15, waterM3d: 60, sewerM3d: 45 },
@@ -79,7 +79,7 @@ export const STATS: Record<string, ModuleStats> = {
   // energy
   'solar-canopy': { capexM: 0.12, genMW: 0.01 },
   'solar-field': { capexM: 0.3, genMW: 0.05 },
-  'battery-yard': { capexM: 1.3 },
+  'battery-yard': { capexM: 1.3, useMW: 0.05 },
   substation: { capexM: 10, jobs: 2, computeUsePF: 2, waterM3d: 1, sewerM3d: 0.5 },
   smr: { capexM: 2500, jobs: 70, genMW: 270, computeUsePF: 30, waterM3d: 500, sewerM3d: 50 },
 
@@ -87,7 +87,7 @@ export const STATS: Record<string, ModuleStats> = {
   'chip-fab': { capexM: 2000, jobs: 350, useMW: 10, computeUsePF: 150, waterM3d: 900, sewerM3d: 700 },
   'upw-plant': { capexM: 60, jobs: 10, useMW: 1, computeUsePF: 5, waterM3d: 100, sewerM3d: 80 },
   'gas-farm': { capexM: 30, jobs: 6, useMW: 0.3, waterM3d: 10, sewerM3d: 8 },
-  'chem-storage': { capexM: 10, jobs: 4, waterM3d: 2, sewerM3d: 1 },
+  'chem-storage': { capexM: 10, jobs: 4, useMW: 0.02, waterM3d: 2, sewerM3d: 1 },
   'cooling-towers': { capexM: 15, jobs: 2, useMW: 0.5, waterM3d: 300, sewerM3d: 60 },
   wastewater: { capexM: 40, jobs: 8, useMW: 0.8, computeUsePF: 3, waterM3d: 5, sewerM3d: -1500 },
   'robotics-fab': { capexM: 200, jobs: 140, useMW: 1.5, computeUsePF: 200, waterM3d: 60, sewerM3d: 50 },

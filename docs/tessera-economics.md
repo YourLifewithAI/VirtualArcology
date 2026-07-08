@@ -190,7 +190,7 @@ Most in-Tessera trips are walked (that is the point of a 5-minute neighborhood),
 
 | Module | Capacity | Basis |
 |---|---|---|
-| AV Shuttle Depot | 1,800 trips/day | ~8 six-seaters × ~150 trips/day each at neighborhood speeds, 20 h service |
+| AV Shuttle Depot | 1,800 trips/day | ~12 six-seaters × ~150 trips/day each at neighborhood speeds, 20 h service |
 | Transit Hub (rail + bus) | 6,000 trips/day | 2-track regional rail + 3 bus bays, peak-spread |
 | Delivery Robot Depot | 1,500 parcels/day | ~18 robots × ~85 drops/day |
 | Logistics Hub | 4,000 parcels/day | dock-door feeder that breaks regional freight into robot loads |
@@ -199,4 +199,4 @@ The Ledger compares Σ capacity against population demand per stream; the per-bu
 
 ## The water ledger, by end use
 
-Water now has its own build category (water tower & treatment, wastewater plant, UPW plant, bioswales) and the Ledger's Water/Wastewater rows expand into per-building demand vs capacity. Demo-scale orientation, from `stats.ts`: the chip fab dominates at 900 m³/d (plus 300 m³/d cooling towers and 100 m³/d UPW), the SMR draws 500, farms ~100 total (greenhouses 15 each, vertical farms 12, RAS fishery 45, aquaponics 20, mycology 8, orchards 4), residential ~48 m³/d per 1,000 homes (≈34 L/resident/day of indoor potable — dry-fixture, greywater-recycling assumptions), parks/plazas 3 each. Industrial water is the design pressure, not showers.
+Water now has its own build category (water tower & treatment, wastewater plant, UPW plant, bioswales) and the Ledger's Water/Wastewater rows expand into per-building demand vs capacity. Demo-scale orientation, from `stats.ts`: the chip fab dominates at 900 m³/d (plus 300 m³/d cooling towers and 100 m³/d UPW), the SMR draws 500, farms ~100 total (greenhouses 15 each, vertical farms 12, RAS fishery 45, aquaponics 20, mycology 8, orchards 4), residential ~440 m³/d per 1,000 homes (≈0.44 m³/d per unit ≈ 200 L/resident/day of indoor potable at 2.2 residents/home), parks/plazas 3 each. Industrial water is the design pressure, not showers.

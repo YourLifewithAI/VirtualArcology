@@ -23,11 +23,16 @@ const UTILITIES = [
   { key: 'fiber', color: 0x2ee6d6, depth: -2.7, r: 0.18, sinks: ['data-center', 'comms-mast'] },
 ] as const;
 
-/** A building only gets a service stub for utilities its stats say it touches. */
+/**
+ * A building only gets a service stub for utilities its stats say it touches.
+ * Water/sewer require POSITIVE demand: negative values are supply/treatment
+ * capacity — plants are routed as sinks by id, and distributed treatment
+ * (bioswales) needs no trunk connection at all.
+ */
 const NEEDS_UTILITY: Record<(typeof UTILITIES)[number]['key'], (s: ModuleStats | undefined) => boolean> = {
   power: (s) => !s || !!(s.useMW || s.genMW),
-  water: (s) => !s || !!s.waterM3d,
-  sewer: (s) => !s || !!s.sewerM3d,
+  water: (s) => !s || (s.waterM3d ?? 0) > 0,
+  sewer: (s) => !s || (s.sewerM3d ?? 0) > 0,
   fiber: (s) => !s || !!(s.computePF || s.computeUsePF),
 };
 
