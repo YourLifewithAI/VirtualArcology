@@ -17,6 +17,7 @@ import {
   type ModuleStats,
 } from '../catalog/stats';
 import { getModule } from '../catalog/ModuleCatalog';
+import { sourceChips } from '../catalog/sources';
 import { rotatedFootprint } from '../tessera/Grid';
 import type { TesseraMode } from '../tessera/TesseraMode';
 
@@ -267,14 +268,17 @@ export class LedgerPanel {
         const rowHtml = `<div class="row${expandable ? ' expandable' : ''}${isOpen ? ' open' : ''}"${
           expandable ? ` data-k="${r.label}"` : ''
         }><span>${expandable ? `<i class="chev">${isOpen ? '▾' : '▸'}</i>` : ''}${r.label}</span><span class="val ${r.cls ?? ''}">${r.value}</span></div>`;
-        const bdHtml = isOpen && r.bd ? `<div class="bd">${r.bd.body}<div class="bd-note">${r.bd.note}</div></div>` : '';
+        const bdHtml =
+          isOpen && r.bd
+            ? `<div class="bd">${r.bd.body}<div class="bd-note">${r.bd.note}</div>${sourceChips(r.label)}</div>`
+            : '';
         return rowHtml + bdHtml;
       })
       .join('');
     this.el.innerHTML = `
       <h3>Tessera Ledger</h3>
       ${html}
-      <div class="foot">Click any row for its per-building math · sources: docs/tessera-economics.md</div>
+      <div class="foot">Click any row for its per-building math and sources (◈ = worldbuilding assumption) · docs/tessera-economics.md</div>
     `;
   }
 

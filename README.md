@@ -32,21 +32,26 @@ The app opens on a demo neighborhood. Build your own:
 | **Ctrl+Z / Ctrl+Y** | Undo / redo |
 | **M** | Pick up the selected building and move it |
 | **Del** | Remove the selected building |
+| **⬚ Select** | Box-select mode: drag over buildings, then **Del** deletes or **M** moves the whole block (one undo step) |
 | **Tab** or 🚶 Walk | Enter first-person walkthrough |
 | Drag / scroll | Orbit / zoom |
 
-The palette covers 45 modules: housing (including the **Agent House**,
+The palette covers 46 modules: housing (including the **Agent House**,
 civic quarters for embodied AI citizens), civic space (school, emergency
-services, pools, venue, grocery, library...), food production (greenhouses,
-vertical farms, RAS fishery, mycology), energy (solar, batteries,
-substation, SMR), the full chip-fab support chain, a robotics fab and
-materials-recovery foundry, compute, logistics (including the rail + bus
-**Transit Hub** and the **AV Shuttle Depot**) and streetscape.
+services, pools, venue, grocery, library, **restaurant row**...), food
+production (greenhouses, vertical farms, RAS fishery, mycology), energy
+(solar, batteries, substation, SMR), the full chip-fab support chain, a
+robotics fab and materials-recovery foundry, compute, logistics (including
+the rail + bus **Transit Hub** and the **AV Shuttle Depot**) and streetscape.
 
-Streets are functional, not decorative: delivery robots BFS-route over any
-`Street` modules you lay down, and six-seater autonomous shuttles run
-scheduled loops between AV depots and the transit hub — the mass-transit
-system an arcology needs, planted at neighborhood scale. Shuttles only run
+Streets are functional, not decorative: they double as **solar pavement**
+(the heaviest regular load is a robot, which fixes road-PV's durability
+problem), delivery robots BFS-route over them, and six-seater autonomous
+shuttles run scheduled loops between AV depots and the transit hub.
+**Robots have real jobs** — parts couriers between the fabs, farm-to-table
+produce runs, meal deliveries from the restaurants, parcel rounds, scrap
+runs to the foundry — each role color-tinted; **click any robot** to see
+who it is, what it's hauling, and where it's headed. Shuttles only run
 where the street network actually connects, and the **Roads** toolbar
 toggle shows exactly that: teal streets reach the transit network, red
 streets are islands (with a toast tallying the gaps).
@@ -66,8 +71,11 @@ capacity detail. The **Ledger** toolbar button shows live economics of
 everything placed — population, jobs, energy, export income (energy + spare
 compute), water balance by end use, transit & delivery capacity vs demand,
 fresh-produce coverage, capex — and **every row expands on click** into the
-per-building math behind the number, sourced from
-[`docs/tessera-economics.md`](docs/tessera-economics.md).
+per-building math behind the number, with **citation chips linking to the
+real-world sources** behind each assumption (Census, BLS, EIA, EPA, USDA,
+NREL, NHTS…; ◈ marks deliberate worldbuilding assumptions). Full reference
+table in [`docs/tessera-economics.md`](docs/tessera-economics.md). The
+compass is draggable — park it wherever you like.
 
 **Pipes** toggles the underground-infrastructure x-ray — and every line is
 *routed*: service stubs run to the street, then follow the street network to

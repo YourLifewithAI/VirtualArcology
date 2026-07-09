@@ -67,6 +67,7 @@ export const STATS: Record<string, ModuleStats> = {
   venue: { capexM: 12, jobs: 20, useMW: 0.06, waterM3d: 8, sewerM3d: 7 },
   grocery: { capexM: 3, jobs: 15, useMW: 0.08, computeUsePF: 4, waterM3d: 5, sewerM3d: 4.5 },
   library: { capexM: 5, jobs: 6, useMW: 0.03, computeUsePF: 10, waterM3d: 2, sewerM3d: 1.8 },
+  restaurant: { capexM: 1.8, jobs: 24, useMW: 0.09, computeUsePF: 3, waterM3d: 9, sewerM3d: 8 },
 
   // food
   greenhouse: { capexM: 0.4, jobs: 3, foodT: 25, useMW: 0.05, waterM3d: 15, sewerM3d: 2 },
@@ -105,7 +106,8 @@ export const STATS: Record<string, ModuleStats> = {
   'transit-hub': { capexM: 35, jobs: 20, useMW: 0.15, computeUsePF: 8, waterM3d: 10, sewerM3d: 9, tripsDay: 6000 },
 
   // landscape
-  street: { capexM: 0.06 },
+  // PV pavement: ~30 m² of panels per tile at ~55% of rooftop yield
+  street: { capexM: 0.12, genMW: 0.002 },
   park: { capexM: 0.12, waterM3d: 3 },
   'tree-row': { capexM: 0.02 },
   bioswale: { capexM: 0.03, sewerM3d: -5 },

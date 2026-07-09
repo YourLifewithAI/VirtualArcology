@@ -12,6 +12,7 @@ export interface ToolbarActions {
   toggleRoads(): boolean;
   toggleFood(): boolean;
   toggleTerrain(): boolean;
+  toggleSelect(): boolean;
   newSite(): void;
   cycleTheme(): void;
   cycleBiome(): void;
@@ -52,6 +53,9 @@ export class Toolbar {
     sep();
     add('walk', '🚶 Walk', () => actions.walk(), 'First-person walkthrough (Tab)');
     sep();
+    add('select', '⬚ Select', () => {
+      this.btns.select.classList.toggle('active', actions.toggleSelect());
+    }, 'Box select: drag over buildings, then Del deletes or M moves the whole block');
     add('undo', '↩', () => actions.undo(), 'Undo (Ctrl+Z)');
     add('redo', '↪', () => actions.redo(), 'Redo (Ctrl+Y)');
     add('grid', '#', () => actions.toggleGrid(), 'Toggle grid');
@@ -87,7 +91,7 @@ export class Toolbar {
   }
 
   /** Sync a toggle button's active state with app state restored at boot. */
-  setToggleState(key: 'pipes' | 'roads' | 'food' | 'terrain', on: boolean): void {
+  setToggleState(key: 'pipes' | 'roads' | 'food' | 'terrain' | 'select', on: boolean): void {
     this.btns[key]?.classList.toggle('active', on);
   }
 
@@ -95,7 +99,7 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
+    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
       this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();

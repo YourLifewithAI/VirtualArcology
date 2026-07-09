@@ -1,4 +1,5 @@
 import './ui/ui.css';
+import * as THREE from 'three';
 import { App } from './core/App';
 import { applyTheme, THEME_LABELS, THEME_NAMES } from './core/Palette';
 import { registerAllModules } from './catalog/modules/index';
@@ -22,7 +23,8 @@ import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
 import { ArcologyMode } from './arcology/ArcologyMode';
 import { ArcologyPanel } from './ui/ArcologyPanel';
-import { Robots } from './tessera/Robots';
+import { MarqueeSelection } from './tessera/MarqueeSelection';
+import { Robots, type RobotInfo } from './tessera/Robots';
 import { Shuttles } from './tessera/Shuttles';
 import { Clouds } from './tessera/Clouds';
 
@@ -68,6 +70,49 @@ siteDefiner.onExit = () => {
   updateHint();
 };
 const walkthrough = new WalkthroughController(app);
+const marquee = new MarqueeSelection(app, tessera, placement);
+marquee.onToast = (msg) => hud.showToast(msg);
+marquee.onChanged = () => {
+  toolbar.setToggleState('select', marquee.active);
+  updateHint();
+};
+
+// ---- robot inspection card --------------------------------------------------
+const robots = new Robots(tessera);
+const robotCard = document.createElement('div');
+robotCard.className = 'va-robotcard';
+robotCard.style.display = 'none';
+uiRoot.appendChild(robotCard);
+let robotCardTimer = 0;
+function showRobotCard(info: RobotInfo, x: number, y: number): void {
+  robotCard.innerHTML = `
+    <b>${info.roleLabel}</b>
+    <div class="cargo">${info.cargo}</div>
+    ${info.fromName !== '—' ? `<div class="route">${info.fromName} → ${info.toName || '…'}</div>` : ''}
+    <div class="status">${info.status}</div>`;
+  robotCard.style.left = `${Math.min(x + 14, window.innerWidth - 250)}px`;
+  robotCard.style.top = `${Math.min(y - 10, window.innerHeight - 120)}px`;
+  robotCard.style.display = '';
+  window.clearTimeout(robotCardTimer);
+  robotCardTimer = window.setTimeout(() => {
+    robotCard.style.display = 'none';
+  }, 8000);
+}
+const robotRay = new THREE.Raycaster();
+placement.prePick = (e) => {
+  const el = app.renderer.domElement;
+  robotRay.setFromCamera(
+    new THREE.Vector2((e.clientX / el.clientWidth) * 2 - 1, -(e.clientY / el.clientHeight) * 2 + 1),
+    app.rig.camera,
+  );
+  const info = robots.pick(robotRay);
+  if (!info) {
+    robotCard.style.display = 'none';
+    return false;
+  }
+  showRobotCard(info, e.clientX, e.clientY);
+  return true;
+};
 
 placement.onInspect = (index, placed) => {
   if (index !== null && placed) {
@@ -138,6 +183,7 @@ function setAppMode(mode: 'tessera' | 'arcology'): void {
 }
 
 function startWalk(): void {
+  if (marquee.active) marquee.setActive(false);
   if (app.activeMode?.id === 'arcology' && arcology) {
     const spawn = arcology.tierSpawns[Math.min(4, arcology.tierSpawns.length - 1)];
     if (spawn) {
@@ -258,10 +304,17 @@ const toolbar = new Toolbar(uiRoot, {
   },
   newSite: () => {
     if (walkthrough.state !== 'off') walkthrough.exit();
+    if (marquee.active) marquee.setActive(false);
     placement.select(null);
     placement.inspect(null);
     placement.suspended = true;
     siteDefiner.begin();
+  },
+  toggleSelect: () => {
+    if (!marquee.active && walkthrough.state !== 'off') walkthrough.exit();
+    if (!marquee.active && siteDefiner.active) siteDefiner.exit();
+    marquee.setActive(!marquee.active);
+    return marquee.active;
   },
   cycleTheme: () => {
     const i = THEME_NAMES.indexOf(themeName);
@@ -292,18 +345,26 @@ placement.onStateChanged = () => {
 };
 
 function updateHint(): void {
-  if (placement.isMoving) {
+  if (marquee.active) {
+    if (marquee.isCarrying) {
+      hud.setHint('<b>Click</b> drop the block (green = fits) · <b>Esc</b> put it back');
+    } else if (marquee.count > 0) {
+      hud.setHint(`<b>${marquee.count} selected</b> · <b>Del</b> delete all · <b>M</b> move as a block · drag to reselect · <b>Esc</b> clear`);
+    } else {
+      hud.setHint('<b>Drag</b> a box over buildings to select them · <b>Esc</b> exits select mode');
+    }
+  } else if (placement.isMoving) {
     hud.setHint('<b>Click</b> drop building · <b>R</b> rotate · <b>Esc</b> put it back');
   } else if (placement.selected) {
     hud.setHint('<b>Click</b> place · <b>R</b> rotate · <b>Right-click</b> delete · <b>Esc</b> deselect');
   } else {
-    hud.setHint('<b>Click</b> a building to inspect it · pick a module from the palette to build · <b>Right-click</b> deletes');
+    hud.setHint('<b>Click</b> a building to inspect it · <b>click</b> a robot to see its job · pick a module from the palette to build');
   }
 }
 updateHint();
 
 tessera.registerAnimatable({ update: (dt) => walkthrough.update(dt) });
-tessera.registerAnimatable(new Robots(tessera));
+tessera.registerAnimatable(robots);
 tessera.registerAnimatable(new Shuttles(tessera));
 tessera.registerAnimatable(new Clouds(tessera.scene));
 
@@ -357,6 +418,8 @@ app.onFirstFrame(() => {
   app,
   tessera,
   placement,
+  marquee,
+  robots,
   stats: () => app.stats(),
   serialize: () => serializeLayout(tessera.grid),
   loadLayout: (json: unknown) => {

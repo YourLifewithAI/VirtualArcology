@@ -8,9 +8,9 @@ import { groundSlab } from '../parts';
 
 const street: ModuleDef = {
   id: 'street',
-  name: 'Street Segment',
+  name: 'Street Segment (Solar)',
   category: 'landscape',
-  description: 'Shared street: robot lane, walkway strips — delivery robots route over these',
+  description: 'Shared solar street: PV pavement, robot lane, walkway strips — robots and shuttles route over these',
   footprint: { w: 1, d: 1 },
   height: 0.2,
   walkable: true,
@@ -23,6 +23,12 @@ const street: ModuleDef = {
     b.hquad(10, 0.8, 'path', { z: 4.6, y: 0.11 });
     b.hquad(0.8, 10, 'path', { x: -4.6, y: 0.115 });
     b.hquad(0.8, 10, 'path', { x: 4.6, y: 0.115 });
+    // PV pavement inlays in the quadrant lanes: drones and feet, not trucks,
+    // so the surface doubles as solar capture (rotation- and tiling-agnostic)
+    for (const [sx, sz] of [[-2.4, -2.4], [2.4, -2.4], [-2.4, 2.4], [2.4, 2.4]] as const) {
+      b.hquad(3.1, 3.1, 'solarDark', { x: sx, z: sz, y: 0.112 });
+      b.hquad(2.7, 2.7, 'solar', { x: sx, z: sz, y: 0.118 });
+    }
     // robot-lane stripe (both axes so tiled rows always connect visually)
     b.hquad(10, 0.18, 'robotTeal', { y: 0.12 });
     b.hquad(0.18, 10, 'robotTeal', { y: 0.125 });

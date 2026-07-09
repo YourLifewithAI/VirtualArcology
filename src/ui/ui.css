@@ -273,7 +273,13 @@
   right: 320px;
   width: 64px;
   height: 64px;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+}
+
+.va-compass:active {
+  cursor: grabbing;
 }
 
 .va-compass-ring {
@@ -496,6 +502,69 @@
   line-height: 1.45;
   color: var(--text-dim);
   opacity: 0.8;
+}
+
+.va-ledger .bd-sources {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.va-ledger .bd-sources .src {
+  font-size: 9.5px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--panel-border);
+  color: var(--accent);
+  text-decoration: none;
+  opacity: 0.9;
+}
+
+.va-ledger .bd-sources .src:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.va-ledger .bd-sources .src.spec {
+  color: var(--text-dim);
+  border-style: dashed;
+}
+
+/* ---- robot inspection card ---- */
+.va-robotcard {
+  position: absolute;
+  width: 230px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  z-index: 30;
+}
+
+.va-robotcard b {
+  color: var(--accent);
+  font-size: 12.5px;
+}
+
+.va-robotcard .cargo {
+  color: var(--text);
+  margin-top: 3px;
+}
+
+.va-robotcard .route {
+  color: var(--text-dim);
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.va-robotcard .status {
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-style: italic;
+  font-size: 11px;
 }
 
 /* ---- building inspector ---- */
