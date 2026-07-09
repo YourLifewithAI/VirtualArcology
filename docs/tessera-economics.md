@@ -200,3 +200,36 @@ The Ledger compares Σ capacity against population demand per stream; the per-bu
 ## The water ledger, by end use
 
 Water now has its own build category (water tower & treatment, wastewater plant, UPW plant, bioswales) and the Ledger's Water/Wastewater rows expand into per-building demand vs capacity. Demo-scale orientation, from `stats.ts`: the chip fab dominates at 900 m³/d (plus 300 m³/d cooling towers and 100 m³/d UPW), the SMR draws 500, farms ~100 total (greenhouses 15 each, vertical farms 12, RAS fishery 45, aquaponics 20, mycology 8, orchards 4), residential ~440 m³/d per 1,000 homes (≈0.44 m³/d per unit ≈ 200 L/resident/day of indoor potable at 2.2 residents/home), parks/plazas 3 each. Industrial water is the design pressure, not showers.
+
+---
+
+# Addendum: Phase 7 — solar streets, restaurants, and the reference shelf
+
+**Solar streets.** Every street tile now carries ~30 m² of PV pavement in its quadrant lanes (≈2 kW average, ~55% of rooftop yield). Road-surface PV pilots (Colas' Wattway in France, various US/NL trials) proved the optics work but died under truck axles; a street whose heaviest regular load is a 40 kg delivery robot sidesteps the durability problem entirely. Heavy construction traffic uses the reinforced curb edges. Capex doubles per tile ($60k → $120k); at demo scale the ~430 tiles add ~0.9 MW of distributed generation.
+
+**Restaurants.** One Restaurant Row (2×1, three kitchens) per ~1,000 residents: 24 jobs, 90 kW, 9 m³/d water. They anchor the produce loop — farm-to-table robot runs in, meal deliveries out.
+
+## References
+
+Every figure in `stats.ts` traces to one of these (also linked live in the Ledger's expanded rows; ◈ marks deliberate worldbuilding assumptions):
+
+| Domain | Source |
+|---|---|
+| Household size | U.S. Census Bureau, American Community Survey — https://www.census.gov/programs-surveys/acs |
+| Labor force | BLS employment–population ratio — https://www.bls.gov/charts/employment-situation/employment-population-ratio.htm |
+| Residential energy | EIA Residential Energy Consumption Survey — https://www.eia.gov/consumption/residential/ |
+| Wholesale power price | EIA wholesale electricity markets — https://www.eia.gov/electricity/wholesale/ |
+| Residential water | EPA WaterSense statistics — https://www.epa.gov/watersense/statistics-and-facts |
+| Fab water | TSMC sustainability reporting — https://esg.tsmc.com/en-US/resources/reports |
+| Water reuse / bioswales | EPA Water Reuse Action Plan — https://www.epa.gov/waterreuse |
+| SMR sizing | IAEA SMR database / NuScale — https://aris.iaea.org/sites/SMR.html |
+| Solar yields | NREL photovoltaic research — https://www.nrel.gov/research/re-photovoltaics.html |
+| Solar roads | Colas Wattway — https://www.wattwaybycolas.com/en/ |
+| Compute density | NVIDIA H100 datasheet — https://www.nvidia.com/en-us/data-center/h100/ |
+| Compute pricing | Public GPU cloud price lists — https://lambdalabs.com/service/gpu-cloud |
+| Produce consumption | USDA ERS Food Availability — https://www.ers.usda.gov/data-products/food-availability-per-capita-data-system/ |
+| Vertical farm yield | USDA controlled-environment agriculture — https://www.ams.usda.gov/services/local-regional/food-sector/controlled-environment-agriculture |
+| Travel demand | FHWA National Household Travel Survey — https://nhts.ornl.gov/ |
+| Parcel volume ◈ | Pitney Bowes Parcel Shipping Index (×5 robot-delivery multiplier is ours) — https://www.pitneybowes.com/us/shipping-index.html |
+| AI power user ◈ | Life with AI worldbuilding — https://lifewithai.ai |
+| Construction costs | RSMeans / CBRE 2025-26 US cost structures — https://www.rsmeans.com/ |

@@ -267,4 +267,11 @@ put('av-depot', 52, 20); // eastern civic district
 for (const [x, z] of [[45, 1], [44, 1], [43, 1], [43, 2], [42, 2]] as const) put('street', x, z);
 for (let z = 3; z <= 11; z++) put('street', 42, z);
 
+// ============================================================================
+// Phase 7: restaurants — one per quarter, close to farms and foot traffic.
+// ============================================================================
+put('restaurant', 30, 13); // NE, off the plaza spine
+put('restaurant', 20, 30); // plaza west, beside the market rows
+put('restaurant', 49, 20); // eastern civic district
+
 export const DEMO_LAYOUT: PlacedModule[] = L;

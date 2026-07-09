@@ -14,7 +14,9 @@ import type { TesseraMode } from './TesseraMode';
 type Command =
   | { type: 'place'; index: number; placed: PlacedModule }
   | { type: 'remove'; index: number; placed: PlacedModule }
-  | { type: 'move'; fromIndex: number; from: PlacedModule; toIndex: number; to: PlacedModule };
+  | { type: 'move'; fromIndex: number; from: PlacedModule; toIndex: number; to: PlacedModule }
+  | { type: 'bulk-remove'; entries: { index: number; placed: PlacedModule }[] }
+  | { type: 'bulk-move'; moves: { fromIndex: number; from: PlacedModule; toIndex: number; to: PlacedModule }[] };
 
 export class PlacementController {
   private raycaster = new THREE.Raycaster();
@@ -42,6 +44,8 @@ export class PlacementController {
   onStateChanged: (() => void) | null = null;
   /** UI hook: called when the inspected building changes (null = deselected). */
   onInspect: ((index: number | null, placed: PlacedModule | null) => void) | null = null;
+  /** Tried before building inspection on left click (robot picking). Return true to consume. */
+  prePick: ((e: PointerEvent) => boolean) | null = null;
   /** When true (walkthrough active), all builder input is ignored. */
   suspended = false;
 
@@ -145,7 +149,12 @@ export class PlacementController {
     if (!cmd) return;
     if (cmd.type === 'place') this.mode.removePlacement(cmd.index);
     else if (cmd.type === 'remove') this.mode.restorePlacement(cmd.index, cmd.placed);
-    else {
+    else if (cmd.type === 'bulk-remove') {
+      for (const e of cmd.entries) this.mode.restorePlacement(e.index, e.placed);
+    } else if (cmd.type === 'bulk-move') {
+      for (const mv of cmd.moves) this.mode.removePlacement(mv.toIndex);
+      for (const mv of cmd.moves) this.mode.restorePlacement(mv.fromIndex, mv.from);
+    } else {
       this.mode.removePlacement(cmd.toIndex);
       this.mode.restorePlacement(cmd.fromIndex, cmd.from);
     }
@@ -160,11 +169,25 @@ export class PlacementController {
     if (!cmd) return;
     if (cmd.type === 'place') this.mode.restorePlacement(cmd.index, cmd.placed);
     else if (cmd.type === 'remove') this.mode.removePlacement(cmd.index);
-    else {
+    else if (cmd.type === 'bulk-remove') {
+      for (const e of cmd.entries) this.mode.removePlacement(e.index);
+    } else if (cmd.type === 'bulk-move') {
+      for (const mv of cmd.moves) this.mode.removePlacement(mv.fromIndex);
+      for (const mv of cmd.moves) this.mode.restorePlacement(mv.toIndex, mv.to);
+    } else {
       this.mode.removePlacement(cmd.fromIndex);
       this.mode.restorePlacement(cmd.toIndex, cmd.to);
     }
     this.undoStack.push(cmd);
+    this.revalidateInspection();
+    this.onStateChanged?.();
+  }
+
+  /** Record an already-executed bulk operation so Ctrl+Z reverses it as one step. */
+  pushBulkCommand(cmd: Command & { type: 'bulk-remove' | 'bulk-move' }): void {
+    this.undoStack.push(cmd);
+    if (this.undoStack.length > 100) this.undoStack.shift();
+    this.redoStack = [];
     this.revalidateInspection();
     this.onStateChanged?.();
   }
@@ -279,7 +302,8 @@ export class PlacementController {
     if (e.button !== 0) return;
     const def = this.def();
     if (!def) {
-      // no ghost armed: clicking picks a building to inspect (or clears)
+      // no ghost armed: robots first, then buildings to inspect (or clear)
+      if (this.prePick?.(e)) return;
       this.inspect(this.placementIndexAtPointer(e));
       return;
     }

@@ -193,6 +193,12 @@ export const LORE: Record<string, ModuleLore> = {
     contributes:
       'Home base for the robots threading the street lattice. Watch the streets: everything they carry, a resident didn’t have to drive.',
   },
+  restaurant: {
+    purpose:
+      'Three open kitchens under alternating awnings, terrace tables spilling onto the street, and a menu board that changes with whatever the vertical farms picked this morning.',
+    contributes:
+      'Where the food web becomes dinner. Produce arrives by robot from the farms and fishery a few blocks over; meal runs head out the other way. Restaurants are infrastructure — a neighborhood that only cooks at home is a neighborhood without a living room.',
+  },
   'av-depot': {
     purpose:
       'A charging plaza for six-seater autonomous shuttles: glowing bays under a solar canopy, a small ops kiosk, and pods pulling in and out all day.',
@@ -209,9 +215,9 @@ export const LORE: Record<string, ModuleLore> = {
   // ---- landscape ----
   street: {
     purpose:
-      'A shared surface: robot lane down the middle, walkway curbs at the edges, no cars in sight.',
+      'A shared surface: robot lane down the middle, walkway curbs at the edges, photovoltaic pavement in the quadrants — no cars in sight.',
     contributes:
-      'The Tessera’s circulatory system — and the robots’ route map. Lay more of these and the delivery fleet finds them on its own.',
+      'The Tessera’s circulatory system — and the robots’ route map. Because the heaviest regular load is a delivery robot, the surface doubles as solar capture (~2 kW average per tile; France’s Wattway proved the concept, and a road that never carries trucks fixes its durability problem). Heavy construction traffic uses the reinforced curb edges.',
   },
   park: {
     purpose:

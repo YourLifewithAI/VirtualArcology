@@ -682,5 +682,53 @@ const library: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons, school, fireStation, natatorium, venue, grocery, library];
+const restaurant: ModuleDef = {
+  id: 'restaurant',
+  name: 'Restaurant Row',
+  category: 'civic',
+  description: 'Neighborhood restaurants: open kitchens, awninged terrace dining, farm-to-table by robot',
+  footprint: { w: 2, d: 1 },
+  height: 5,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 2, 1, 'paver');
+    // low timber building along the back, three storefronts
+    b.box(18.5, 3.6, 4.6, 'timber', { z: -2.4, y: 0.12 });
+    b.box(19, 0.5, 5.2, 'timberDark', { z: -2.4, y: 3.72 });
+    b.box(18.5, 0.6, 4.6, 'cream', { z: -2.4, y: 3.1 });
+    // storefront glazing + lit kitchen windows
+    for (let i = 0; i < 3; i++) {
+      const x = -6 + i * 6;
+      b.quad(4.6, 2.2, 'windowDark', { x, z: -0.05, y: 0.9 });
+      b.quad(1.6, 1.0, 'windowLit', { x: x + 1.2, z: -0.04, y: 1.5, layer: 'emissive' });
+    }
+    // kitchen vent stacks
+    b.cyl(0.3, 1.6, 'steel', { x: -5.5, z: -3.4, y: 4.0 }, 8);
+    b.cyl(0.3, 1.3, 'steel', { x: 4.2, z: -3.4, y: 4.0 }, 8);
+    // awnings in alternating canvas colors over the terrace
+    const colors: ColorName[] = ['canvasRed', 'canvasTeal', 'canvasYellow'];
+    for (let i = 0; i < 3; i++) {
+      const x = -6 + i * 6;
+      const g = new THREE.BoxGeometry(5.2, 0.14, 2.6);
+      g.rotateX(-0.28);
+      g.translate(x, 3.0, 0.9);
+      b.custom(g, colors[(i + rng.int(0, 2)) % 3]);
+    }
+    // terrace tables + seats
+    for (let i = 0; i < 5; i++) {
+      const x = rng.float(-8, 8);
+      const z = rng.float(1.8, 3.6);
+      b.cyl(0.55, 0.75, 'cream', { x, z, y: 0.14 }, 8);
+      b.box(0.4, 0.45, 0.4, 'timberDark', { x: x + 0.9, z, y: 0.14 });
+      b.box(0.4, 0.45, 0.4, 'timberDark', { x: x - 0.9, z, y: 0.14 });
+    }
+    // menu-board sign, softly lit
+    b.box(0.5, 2.4, 0.5, 'timberDark', { x: 8.8, z: 3.8, y: 0.12 });
+    b.quad(1.5, 0.9, 'windowLit', { x: 8.8, z: 3.55, y: 1.8, layer: 'emissive' });
+    b.instance('shrub', -8.9, 0.12, 3.9, 0, rng.float(0.8, 1.1));
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons, school, fireStation, natatorium, venue, grocery, library, restaurant];
 export default modules;
