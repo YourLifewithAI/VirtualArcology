@@ -23,6 +23,7 @@ import { WalkthroughController } from './walkthrough/WalkthroughController';
 import { GridCollision } from './walkthrough/GridCollision';
 import { ArcologyMode } from './arcology/ArcologyMode';
 import { ArcologyPanel } from './ui/ArcologyPanel';
+import { AmbientMusic, TRACKS } from './core/AmbientMusic';
 import { MarqueeSelection } from './tessera/MarqueeSelection';
 import { Robots, type RobotInfo } from './tessera/Robots';
 import { Shuttles } from './tessera/Shuttles';
@@ -70,6 +71,12 @@ siteDefiner.onExit = () => {
   updateHint();
 };
 const walkthrough = new WalkthroughController(app);
+const music = new AmbientMusic();
+function firstMusicPick(): number {
+  const saved = localStorage.getItem('va-music');
+  const i = TRACKS.findIndex((t) => t.key === saved);
+  return i >= 0 ? i : 0;
+}
 const marquee = new MarqueeSelection(app, tessera, placement);
 marquee.onToast = (msg) => hud.showToast(msg);
 marquee.onChanged = () => {
@@ -331,6 +338,19 @@ const toolbar = new Toolbar(uiRoot, {
     localStorage.setItem('va-biome', next);
     tessera.setBiome(next);
     hud.showToast(`Region: ${BIOMES[next].label}`);
+  },
+  cycleMusic: () => {
+    // off -> saved/first track -> ... -> last track -> off
+    const next = music.current === -1 ? firstMusicPick() : music.current + 1;
+    if (next >= TRACKS.length) {
+      music.stop();
+      hud.showToast('Music off');
+      return false;
+    }
+    music.play(next);
+    localStorage.setItem('va-music', TRACKS[next].key);
+    hud.showToast(`♪ ${TRACKS[next].label}`);
+    return true;
   },
   canUndo: () => placement.canUndo(),
   canRedo: () => placement.canRedo(),

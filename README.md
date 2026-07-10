@@ -36,9 +36,10 @@ The app opens on a demo neighborhood. Build your own:
 | **Tab** or 🚶 Walk | Enter first-person walkthrough |
 | Drag / scroll | Orbit / zoom |
 
-The palette covers 46 modules: housing (including the **Agent House**,
+The palette covers 48 modules: housing (including the **Agent House**,
 civic quarters for embodied AI citizens), civic space (school, emergency
-services, pools, venue, grocery, library, **restaurant row**...), food
+services, pools, venue, grocery, library, **restaurant row**, a
+**regulation soccer pitch** and a **community gym**...), food
 production (greenhouses, vertical farms, RAS fishery, mycology), energy
 (solar, batteries, substation, SMR), the full chip-fab support chain, a
 robotics fab and materials-recovery foundry, compute, logistics (including
@@ -98,6 +99,14 @@ in: Temperate, Great Plains, High Desert, Tundra, or Exurban Fringe — each
 with its own ground color, fog, and off-site scatter (groves, scrub,
 snowfields, homesteads). Both persist across reloads.
 
+Beyond the site boundary, the **regional corridors** run horizon to
+horizon: a highway flanks the east side (trucks streaming both ways, an
+interchange spur to the site edge) and the freight/passenger rail line
+passes the transit hub along the north — the supply lines that built the
+place. The **🎵 button** cycles six generative ambient tracks (Meadow,
+Terrace Tide, Fab Hum, Railline, Night Shift, Orchard Rain) — synthesized
+live in the browser like everything else here; no audio files.
+
 **Save/Load** exports the layout as JSON (and autosaves to your browser).
 
 ## Walkthrough
@@ -123,7 +132,12 @@ A parametric model of Arcology One (5,000 ft terraced ziggurat, 10 tiers,
 - The rewilded surroundings: prairie, forest, SMR campuses and the grid tie
 
 Reference numbers live in [`docs/world-parameters.md`](docs/world-parameters.md),
-extracted from the Arcology Knowledge Node at lifewithai.ai.
+extracted from the Arcology Knowledge Node at lifewithai.ai. How Tessera
+buildings could stack into the arcology — first-principles load math,
+built precedents (101 George Street, Habitat 67, Shimizu TRY 2004), and
+why the ziggurat needs a megaframe of tier decks rather than one central
+spine — is worked through in
+[`docs/stacking-structures.md`](docs/stacking-structures.md).
 
 ## URL parameters
 

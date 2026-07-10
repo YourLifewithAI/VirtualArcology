@@ -68,6 +68,8 @@ export const STATS: Record<string, ModuleStats> = {
   grocery: { capexM: 3, jobs: 15, useMW: 0.08, computeUsePF: 4, waterM3d: 5, sewerM3d: 4.5 },
   library: { capexM: 5, jobs: 6, useMW: 0.03, computeUsePF: 10, waterM3d: 2, sewerM3d: 1.8 },
   restaurant: { capexM: 1.8, jobs: 24, useMW: 0.09, computeUsePF: 3, waterM3d: 9, sewerM3d: 8 },
+  pitch: { capexM: 1.5, jobs: 2, useMW: 0.06, waterM3d: 20, sewerM3d: 2 },
+  gym: { capexM: 6, jobs: 8, useMW: 0.12, computeUsePF: 2, waterM3d: 10, sewerM3d: 9 },
 
   // food
   greenhouse: { capexM: 0.4, jobs: 3, foodT: 25, useMW: 0.05, waterM3d: 15, sewerM3d: 2 },

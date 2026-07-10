@@ -730,5 +730,96 @@ const restaurant: ModuleDef = {
   },
 };
 
-const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons, school, fireStation, natatorium, venue, grocery, library, restaurant];
+const pitch: ModuleDef = {
+  id: 'pitch',
+  name: 'Regulation Pitch (Soccer)',
+  category: 'civic',
+  description: 'FIFA-minimum 90×50 m grass pitch: goals, floodlights, a modest stand',
+  footprint: { w: 9, d: 5 },
+  height: 16,
+  walkable: true,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 9, 5, 'grass');
+    // field markings (pitch 84×46 inside the runoff apron)
+    const L = 42; // half length
+    const W = 23; // half width
+    const line = 0.35;
+    b.hquad(L * 2, line, 'white', { z: -W, y: 0.13 });
+    b.hquad(L * 2, line, 'white', { z: W, y: 0.13 });
+    b.hquad(line, W * 2, 'white', { x: -L, y: 0.13 });
+    b.hquad(line, W * 2, 'white', { x: L, y: 0.13 });
+    b.hquad(line, W * 2, 'white', { y: 0.135 }); // halfway line
+    const circle = new THREE.RingGeometry(6.8, 6.8 + line, 40).rotateX(-Math.PI / 2);
+    circle.translate(0, 0.135, 0);
+    b.custom(circle, 'white');
+    // penalty boxes + goals at both ends
+    for (const side of [-1, 1] as const) {
+      const gx = side * L;
+      b.hquad(line, 25, 'white', { x: gx - side * 12.5, y: 0.135 });
+      b.hquad(12.5, line, 'white', { x: gx - side * 6.25, z: -12.5, y: 0.135 });
+      b.hquad(12.5, line, 'white', { x: gx - side * 6.25, z: 12.5, y: 0.135 });
+      // goal: two posts + crossbar + back frame
+      for (const pz of [-3.66, 3.66]) b.box(0.14, 2.44, 0.14, 'white', { x: gx, z: pz, y: 0.13 });
+      b.box(0.14, 0.14, 7.4, 'white', { x: gx, y: 2.44 });
+      for (const pz of [-3.66, 3.66]) b.box(1.6, 0.1, 0.1, 'steelDark', { x: gx + side * 0.8, z: pz, y: 0.6 });
+    }
+    // floodlight masts at the corners
+    for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
+      const x = sx * (L + 1.6);
+      const z = sz * (W + 1.2);
+      b.cyl(0.3, 15, 'steelDark', { x, z, y: 0.12 }, 8);
+      b.box(2.6, 1.1, 0.5, 'charcoal', { x, z: z - sz * 0.4, y: 15 });
+      b.quad(2.4, 0.9, 'windowLit', { x, z: z - sz * 0.72, y: 15.1, layer: 'emissive' });
+    }
+    // small stand along the south touchline
+    for (let i = 0; i < 3; i++) {
+      b.box(26, 0.5, 1.3, i % 2 ? 'paver' : 'paverDark', { z: W + 1.9 + i * 1.3, y: 0.1 + i * 0.5 });
+    }
+    b.box(27, 0.4, 4.6, 'timberDark', { z: W + 3.2, y: 3.4 });
+    for (const px of [-12.5, 0, 12.5]) b.box(0.3, 3.3, 0.3, 'timberDark', { x: px, z: W + 4.1, y: 0.1 });
+    b.instance('shrub', -L - 2.5, 0.12, 0, 0, rng.float(0.9, 1.3));
+    b.instance('shrub', L + 2.5, 0.12, 3, 0, rng.float(0.9, 1.3));
+    return b.merge();
+  },
+};
+
+const gym: ModuleDef = {
+  id: 'gym',
+  name: 'Community Gym & Courts',
+  category: 'civic',
+  description: 'Shared gym hall with an outdoor half-court — strength, courts, climbing wall',
+  footprint: { w: 3, d: 2 },
+  height: 9,
+  build(rng) {
+    const b = new PartsBuilder();
+    groundSlab(b, 3, 2, 'paver');
+    // hall: timber box with clerestory band and barrel-ish roof
+    b.box(21, 6.5, 13, 'timber', { x: -3, z: -2.5, y: 0.12 });
+    b.box(21.4, 1.2, 13.4, 'cream', { x: -3, z: -2.5, y: 6.6 });
+    const roof = new THREE.CylinderGeometry(7.2, 7.2, 21, 14, 1, false, 0, Math.PI);
+    roof.rotateZ(Math.PI / 2);
+    roof.scale(1, 0.42, 1);
+    roof.translate(-3, 7.6, -2.5);
+    b.custom(roof, 'steel');
+    // glass entry + lit interior band
+    b.quad(9, 3.2, 'glassTint', { x: -3, z: 4.06, y: 0.9, layer: 'glass' });
+    b.quad(16, 1.4, 'windowLit', { x: -3, z: 4.02, y: 4.6, layer: 'emissive' });
+    facadeWindows(b, rng, { width: 12, y0: 1.4, rows: 1, rowHeight: 3, x: -13.55, z: -2.5, ry: -Math.PI / 2, offset: 0.06, litRatio: 0.5, windowH: 2.4 });
+    // outdoor half-court with hoop
+    b.hquad(9.5, 8.5, 'canvasTeal', { x: 9.5, z: 4.2, y: 0.14 });
+    b.hquad(9.5, 0.25, 'white', { x: 9.5, z: 8.3, y: 0.16 });
+    b.box(0.25, 3.6, 0.25, 'steelDark', { x: 9.5, z: 0.4, y: 0.14 });
+    b.box(1.8, 1.2, 0.12, 'white', { x: 9.5, z: 0.7, y: 3.0 });
+    // rack of outdoor fitness frames
+    for (let i = 0; i < 3; i++) {
+      b.box(0.18, 2.2, 0.18, 'steelDark', { x: 6 + i * 3, z: -8.2, y: 0.12 });
+      b.box(3.2, 0.16, 0.16, 'steelDark', { x: 7.5 + i * 3 - 1.5, z: -8.2, y: 2.2 });
+    }
+    b.instance('tree', 13.4, 0.12, -6.5, rng.float(0, 6.28), 0.9);
+    return b.merge();
+  },
+};
+
+const modules: ModuleDef[] = [plaza, marketRow, clinic, makerspace, commons, school, fireStation, natatorium, venue, grocery, library, restaurant, pitch, gym];
 export default modules;

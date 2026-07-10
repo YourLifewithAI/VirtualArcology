@@ -193,6 +193,18 @@ export const LORE: Record<string, ModuleLore> = {
     contributes:
       'Home base for the robots threading the street lattice. Watch the streets: everything they carry, a resident didn’t have to drive.',
   },
+  pitch: {
+    purpose:
+      'A FIFA-minimum 90×50 m grass pitch with goals, corner floodlights, and a three-step stand under a timber canopy.',
+    contributes:
+      'League nights are civic infrastructure: the pitch is where the Tessera’s quarters actually meet each other. Floodlights run off the solar streets; the turf’s irrigation runoff drains to the bioswales along the touchline.',
+  },
+  gym: {
+    purpose:
+      'A barrel-roofed shared gym: strength floor, courts, climbing wall, and an outdoor half-court that never quite goes quiet.',
+    contributes:
+      'The community’s living room for bodies, the way the library is for minds. Shared equipment beats 1,500 basement treadmills — the same logic as the tool library at the Forge.',
+  },
   restaurant: {
     purpose:
       'Three open kitchens under alternating awnings, terrace tables spilling onto the street, and a menu board that changes with whatever the vertical farms picked this morning.',
@@ -235,7 +247,7 @@ export const LORE: Record<string, ModuleLore> = {
     purpose:
       'A sunken channel of reeds and stormwater doing its slow work, with a footbridge for the humans.',
     contributes:
-      'Rain is routed, cleaned, and soaked — not piped away. It’s the ground-level version of the arcology’s closed water loop, and the frogs approve.',
+      'Rain is routed, cleaned, and soaked — not piped away. The site pad is graded so every swale falls at 1–2% toward the wastewater plant, and where a swale meets a street it ducks under through a box culvert. Chain them along streets and field edges — the pitch’s irrigation runoff is theirs to drink. Ground-level version of the arcology’s closed water loop; the frogs approve.',
   },
 
   // ---- phase 2 additions ----

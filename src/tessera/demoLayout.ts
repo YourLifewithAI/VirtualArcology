@@ -142,8 +142,10 @@ put('tree-row', 37, 33);
 put('tree-row', 26, 39);
 
 // ---- south meadow (z 43..47) ----
-for (let x = 2; x <= 8; x++) put('bioswale', x, 43);
-put('orchard', 10, 43);
+// bioswale run along the z48 street collects pitch irrigation runoff
+// (Phase 8: relocated from x2..8 z43 to clear the regulation pitch)
+for (let x = 20; x <= 26; x++) put('bioswale', x, 47);
+put('orchard', 12, 43);
 put('orchard', 12, 45);
 put('park', 15, 43);
 put('orchard', 20, 44);
@@ -273,5 +275,11 @@ for (let z = 3; z <= 11; z++) put('street', 42, z);
 put('restaurant', 30, 13); // NE, off the plaza spine
 put('restaurant', 20, 30); // plaza west, beside the market rows
 put('restaurant', 49, 20); // eastern civic district
+
+// ============================================================================
+// Phase 8: sport — regulation pitch on the south meadow + community gym.
+// ============================================================================
+put('pitch', 2, 43);
+put('gym', 33, 46);
 
 export const DEMO_LAYOUT: PlacedModule[] = L;
