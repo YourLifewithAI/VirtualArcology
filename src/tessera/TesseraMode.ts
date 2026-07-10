@@ -14,6 +14,7 @@ import { clearInstancedPartCache } from '../catalog/parts';
 import { BiomeLayer } from './BiomeLayer';
 import { FoodWeb } from './FoodWeb';
 import { RegionalCorridors } from './RegionalCorridors';
+import { Terrain, type HeightGrid } from './Terrain';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
 import { RoadNetwork } from './RoadNetwork';
@@ -35,9 +36,12 @@ export class TesseraMode implements Mode {
   private foodWeb: FoodWeb;
   private biomes: BiomeLayer;
   private corridors: RegionalCorridors;
+  readonly terrain = new Terrain();
   private slab: THREE.Mesh | null = null;
   /** Active regional archetype (BIOMES key). */
   biome = 'temperate';
+  /** Human-readable place name when a real location is set. */
+  locationLabel: string | null = null;
   /** 'slab' = paver site pad; 'terrain' = see-through to the biome ground. */
   groundStyle: 'slab' | 'terrain' = 'slab';
   /** True while the underground-infrastructure x-ray view is active. */
@@ -75,7 +79,9 @@ export class TesseraMode implements Mode {
 
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
-    this.biomes = new BiomeLayer(this.scene);
+    this.terrain.setSite(gridSize, gridSize);
+    this.terrain.setProcedural(this.biome);
+    this.biomes = new BiomeLayer(this.scene, this.terrain);
     this.corridors = new RegionalCorridors(this.scene);
     this.registerAnimatable(this.corridors);
 
@@ -112,6 +118,7 @@ export class TesseraMode implements Mode {
     const siteW = gridW * CELL_SIZE;
     const siteD = gridD * CELL_SIZE;
 
+    this.terrain.setSite(gridW, gridD);
     this.biomes.rebuild(this.biome, gridW, gridD, this.scene.fog as THREE.Fog);
     this.corridors.rebuild(gridW, gridD);
 
@@ -149,7 +156,33 @@ export class TesseraMode implements Mode {
   /** Swap the regional archetype (meadow, fog, off-site scatter). Visual only. */
   setBiome(name: string): void {
     this.biome = name;
+    this.terrain.setProcedural(name); // no-op while real elevation is loaded
     this.biomes.rebuild(name, this.grid.width, this.grid.depth, this.scene.fog as THREE.Fog);
+  }
+
+  /**
+   * Location-aware site: real relief (if provided), climate-matched biome,
+   * and the sun where that latitude actually puts it.
+   */
+  applyLocation(loc: { label: string; lat: number; biome: string; heights?: HeightGrid }): void {
+    this.locationLabel = loc.label;
+    if (loc.heights) this.terrain.setReal(loc.heights);
+    // equinox-noon solar elevation for the latitude, kept photogenic
+    const elev = (Math.min(78, Math.max(12, 90 - Math.abs(loc.lat) - 12)) * Math.PI) / 180;
+    const south = loc.lat >= 0 ? 1 : -1;
+    this.sun.position.set(200, Math.sin(elev) * 520, south * Math.cos(elev) * 520);
+    this.setBiome(loc.biome);
+    this.onLayoutChanged?.(); // refresh ledger (location row)
+  }
+
+  /** Back to a placeless site: procedural hills, default sun. */
+  clearLocation(): void {
+    this.locationLabel = null;
+    this.terrain.clearReal();
+    this.terrain.setProcedural(this.biome);
+    this.sun.position.set(320, 420, 180);
+    this.setBiome(this.biome);
+    this.onLayoutChanged?.();
   }
 
   /**

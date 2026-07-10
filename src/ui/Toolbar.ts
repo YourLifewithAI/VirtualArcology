@@ -14,6 +14,7 @@ export interface ToolbarActions {
   toggleTerrain(): boolean;
   toggleSelect(): boolean;
   newSite(): void;
+  locate(): void;
   cycleTheme(): void;
   cycleBiome(): void;
   cycleMusic(): boolean;
@@ -74,6 +75,7 @@ export class Toolbar {
       this.btns.terrain.classList.toggle('active', actions.toggleTerrain());
     }, 'See through the site pad to the ground underneath (buildings keep their own pads)');
     add('new', 'New site', () => actions.newSite(), 'Drag out a fresh site footprint');
+    add('locate', '📍 Locate', () => actions.locate(), 'Set a real location: climate picks the region, real elevation shapes the terrain');
     sep();
     add('theme', '🎨 Theme', () => actions.cycleTheme(), 'Cycle architectural theme (rebuilds every placed module)');
     add('biome', '🌍 Region', () => actions.cycleBiome(), 'Cycle the regional archetype the site sits in');
@@ -103,7 +105,7 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'theme', 'biome', 'music', 'save', 'load', 'clear']) {
+    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'locate', 'theme', 'biome', 'music', 'save', 'load', 'clear']) {
       this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' || key === 'music' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();

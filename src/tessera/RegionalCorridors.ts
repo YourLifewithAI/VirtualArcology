@@ -12,6 +12,7 @@ import { PALETTE } from '../core/Palette';
 import { PartsBuilder } from '../core/geo';
 import { Rng } from '../core/Rng';
 import { CELL_SIZE } from './Grid';
+import { corridorPositions } from './Terrain';
 
 const REACH = 2400; // horizon half-length, matches the biome ring
 const N_TRUCKS = 14;
@@ -86,9 +87,9 @@ export class RegionalCorridors {
     }
 
     const halfX = (gridW * CELL_SIZE) / 2;
-    const halfZ = (gridD * CELL_SIZE) / 2;
-    this.highwayX = halfX + 34;
-    this.railZ = -halfZ - 5;
+    const { highwayX, railZ } = corridorPositions(gridW, gridD);
+    this.highwayX = highwayX;
+    this.railZ = railZ;
 
     const statics: THREE.BufferGeometry[] = [];
     // ---- highway (east side, north-south) ----
