@@ -13,6 +13,7 @@ import { getModule } from '../catalog/ModuleCatalog';
 import { clearInstancedPartCache } from '../catalog/parts';
 import { BiomeLayer } from './BiomeLayer';
 import { FoodWeb } from './FoodWeb';
+import { RegionalCorridors } from './RegionalCorridors';
 import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
 import { RoadNetwork } from './RoadNetwork';
@@ -33,6 +34,7 @@ export class TesseraMode implements Mode {
   private roads: RoadNetwork;
   private foodWeb: FoodWeb;
   private biomes: BiomeLayer;
+  private corridors: RegionalCorridors;
   private slab: THREE.Mesh | null = null;
   /** Active regional archetype (BIOMES key). */
   biome = 'temperate';
@@ -74,6 +76,8 @@ export class TesseraMode implements Mode {
     this.scene.background = new THREE.Color(PALETTE.sky);
     this.scene.fog = new THREE.Fog(PALETTE.skyHorizon, 700, 2600);
     this.biomes = new BiomeLayer(this.scene);
+    this.corridors = new RegionalCorridors(this.scene);
+    this.registerAnimatable(this.corridors);
 
     this.hemi = new THREE.HemisphereLight(0xdff1ff, 0x9a8a6a, 0.9);
     this.scene.add(this.hemi);
@@ -109,6 +113,7 @@ export class TesseraMode implements Mode {
     const siteD = gridD * CELL_SIZE;
 
     this.biomes.rebuild(this.biome, gridW, gridD, this.scene.fog as THREE.Fog);
+    this.corridors.rebuild(gridW, gridD);
 
     const slab = new THREE.Mesh(
       new THREE.BoxGeometry(siteW + 8, 0.2, siteD + 8),
@@ -241,6 +246,7 @@ export class TesseraMode implements Mode {
       mat.needsUpdate = true;
     }
     this.biomes.setTranslucent(this.utilityView);
+    this.corridors.setVisible(!this.utilityView);
   }
 
   private applyGhost(group: THREE.Group, on: boolean): void {

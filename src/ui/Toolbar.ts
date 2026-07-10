@@ -16,6 +16,7 @@ export interface ToolbarActions {
   newSite(): void;
   cycleTheme(): void;
   cycleBiome(): void;
+  cycleMusic(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
 }
@@ -76,6 +77,9 @@ export class Toolbar {
     sep();
     add('theme', '🎨 Theme', () => actions.cycleTheme(), 'Cycle architectural theme (rebuilds every placed module)');
     add('biome', '🌍 Region', () => actions.cycleBiome(), 'Cycle the regional archetype the site sits in');
+    add('music', '🎵', () => {
+      this.btns.music.classList.toggle('active', actions.cycleMusic());
+    }, 'Ambient soundtrack — click to cycle through six generative tracks (all synthesized live)');
     sep();
     add('save', 'Save', () => actions.save(), 'Download layout JSON');
     add('load', 'Load', () => actions.load(), 'Load layout JSON');
@@ -99,8 +103,8 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'theme', 'biome', 'save', 'load', 'clear']) {
-      this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' ? '' : 'none';
+    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'theme', 'biome', 'music', 'save', 'load', 'clear']) {
+      this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' || key === 'music' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();
     this.btns.redo.disabled = !this.actions.canRedo();
