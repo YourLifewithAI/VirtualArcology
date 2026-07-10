@@ -285,6 +285,31 @@ export class TesseraMode implements Mode {
   }
 
   /**
+   * Location-aware site: real relief (if provided), climate-matched biome,
+   * and the sun where that latitude actually puts it.
+   */
+  applyLocation(loc: { label: string; lat: number; biome: string; heights?: HeightGrid }): void {
+    this.locationLabel = loc.label;
+    if (loc.heights) this.terrain.setReal(loc.heights);
+    // equinox-noon solar elevation for the latitude, kept photogenic
+    const elev = (Math.min(78, Math.max(12, 90 - Math.abs(loc.lat) - 12)) * Math.PI) / 180;
+    const south = loc.lat >= 0 ? 1 : -1;
+    this.sun.position.set(200, Math.sin(elev) * 520, south * Math.cos(elev) * 520);
+    this.setBiome(loc.biome);
+    this.onLayoutChanged?.(); // refresh ledger (location row)
+  }
+
+  /** Back to a placeless site: procedural hills, default sun. */
+  clearLocation(): void {
+    this.locationLabel = null;
+    this.terrain.clearReal();
+    this.terrain.setProcedural(this.biome);
+    this.sun.position.set(320, 420, 180);
+    this.setBiome(this.biome);
+    this.onLayoutChanged?.();
+  }
+
+  /**
    * Re-bake everything that has PALETTE colors in it. Call after applyTheme():
    * palette colors live in vertex colors baked at build time, so every placed
    * module, scatter pool, and ground surface is rebuilt in place (placement
