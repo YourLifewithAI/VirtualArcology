@@ -89,7 +89,16 @@ with a toast tallying the gaps.
 **New site** lets you drag out a fresh footprint (live m² readout) — the
 demo neighborhood is preplanned, but new builds start with your own site
 boundary, and saved layouts carry their footprint with them. A compass sits
-top-right so north stays findable.
+top-right so north stays findable (drag it anywhere).
+
+**📍 Locate** makes the site a real place: type a city or "lat, lon" and
+the climate record (Open-Meteo ERA5) picks the matching region archetype,
+the sun moves to that latitude, and **real elevation data shapes the
+surrounding terrain** — the buildable pad stays graded flat (as real
+construction sites are) and the highway/rail corridors run in cut-and-fill
+bands through the hills. Without a location, seeded procedural hills scaled
+to the biome roll to the horizon instead. The location, biome, and cached
+terrain persist across reloads; geocoding © OpenStreetMap contributors.
 
 **🎨 Theme** cycles architectural palettes — Solarpunk (Texas timber),
 Desert Adobe, Nordic Timber, Neon Night, Mediterranean — rebuilding every

@@ -118,6 +118,7 @@ export class LedgerPanel {
     const surplusPF = Math.max(0, t.computePF - t.computeUsePF);
 
     const rows: RowSpec[] = [
+      ...(this.mode.locationLabel ? [{ label: 'Location', value: this.mode.locationLabel }] : []),
       { label: 'Site area', value: `${(siteM2 / 10000).toFixed(1)} ha · ${grid.width * 10}×${grid.depth * 10} m` },
       { label: 'Built / open', value: `${Math.round((builtCells / (grid.width * grid.depth)) * 100)}% built` },
       {

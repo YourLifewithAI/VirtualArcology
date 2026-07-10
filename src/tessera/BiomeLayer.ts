@@ -9,6 +9,7 @@ import { PALETTE } from '../core/Palette';
 import { MATERIALS } from '../core/Materials';
 import { Rng } from '../core/Rng';
 import { instancedPartGeometry } from '../catalog/parts';
+import type { Terrain } from './Terrain';
 
 export interface BiomeDef {
   label: string;
@@ -70,12 +71,14 @@ export class BiomeLayer {
   private xray = false;
   biome = 'temperate';
 
-  constructor(private scene: THREE.Scene) {
+  constructor(
+    private scene: THREE.Scene,
+    private terrain: Terrain,
+  ) {
     this.meadow = new THREE.Mesh(
-      new THREE.CircleGeometry(3000, 48).rotateX(-Math.PI / 2),
+      new THREE.BufferGeometry(),
       new THREE.MeshStandardMaterial({ color: BIOMES.temperate.meadow, roughness: 1 }),
     );
-    this.meadow.position.y = -0.15;
     this.meadow.receiveShadow = true;
     scene.add(this.meadow);
   }
@@ -83,6 +86,9 @@ export class BiomeLayer {
   rebuild(biomeName: string, siteW: number, siteD: number, fog: THREE.Fog | null): void {
     this.biome = biomeName;
     const b = BIOMES[biomeName] ?? BIOMES.temperate;
+    // the ground is a displaced heightfield (real or procedural relief)
+    this.meadow.geometry.dispose();
+    this.meadow.geometry = this.terrain.buildGeometry();
     (this.meadow.material as THREE.MeshStandardMaterial).color.setHex(b.meadow);
     if (fog) {
       fog.near = b.fog.near;
@@ -130,7 +136,7 @@ export class BiomeLayer {
         const s = rng.float(scale[0], scale[1]);
         q.setFromAxisAngle(up, rng.float(0, Math.PI * 2));
         m.compose(
-          new THREE.Vector3(p.x, 0, p.z),
+          new THREE.Vector3(p.x, this.terrain.heightAt(p.x, p.z), p.z),
           q,
           new THREE.Vector3(s, s * (1 + rng.float(-yScaleJitter, yScaleJitter)), s),
         );
