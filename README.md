@@ -91,6 +91,17 @@ demo neighborhood is preplanned, but new builds start with your own site
 boundary, and saved layouts carry their footprint with them. A compass sits
 top-right so north stays findable (drag it anywhere).
 
+**⛰ Landform** opens the terrain layer, SimCity-style: buildings hide and
+the land itself takes the brush — raise, lower, level, smooth, carve
+**lakes**, or drain them (site perimeter stays pinned to the regional
+datum). On exit, anything now standing on too-steep or flooded ground is
+removed — the mode says so up front — and everything else re-seats on the
+new grades. Buildings **grade a level pad** into whatever slope you place
+them on (too steep = red ghost); **streets, orchards, parks, and bioswales
+conform to slopes** instead, robots and shuttles drive the grades, pipes
+follow the ground profile underground, and the walkthrough climbs the
+hills. Terrain and lakes save/load with the layout.
+
 **📍 Locate** makes the site a real place: type a city or "lat, lon" and
 the climate record (Open-Meteo ERA5) picks the matching region archetype,
 the sun moves to that latitude, and **real elevation data shapes the

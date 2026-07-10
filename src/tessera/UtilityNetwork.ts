@@ -57,15 +57,16 @@ interface Site {
   defId: string;
 }
 
-function seg(geoms: THREE.BufferGeometry[], x0: number, z0: number, x1: number, z1: number, y: number, r: number): void {
-  const dx = x1 - x0;
-  const dz = z1 - z0;
-  const len = Math.hypot(dx, dz);
+/** Pipe segment between two 3D points (pipes follow the ground profile). */
+function seg(geoms: THREE.BufferGeometry[], a: THREE.Vector3, b: THREE.Vector3, r: number): void {
+  const dir = b.clone().sub(a);
+  const len = dir.length();
   if (len < 0.01) return;
   const g = new THREE.CylinderGeometry(r, r, len, 6);
-  g.rotateX(Math.PI / 2);
-  g.rotateY(-Math.atan2(dz, dx) + Math.PI / 2);
-  g.translate((x0 + x1) / 2, y, (z0 + z1) / 2);
+  g.translate(0, len / 2, 0);
+  const q = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+  g.applyQuaternion(q);
+  g.translate(a.x, a.y, a.z);
   geoms.push(g);
 }
 
@@ -164,6 +165,10 @@ export class UtilityNetwork {
       return best >= 0 ? [best] : [];
     };
 
+    // pipes follow the ground profile at their utility's depth
+    const P = (x: number, z: number, depth: number): THREE.Vector3 =>
+      new THREE.Vector3(x, this.mode.site.sample(x, z) + depth, z);
+
     for (const u of UTILITIES) {
       const trunks: THREE.BufferGeometry[] = [];
       const stubs: THREE.BufferGeometry[] = [];
@@ -183,14 +188,15 @@ export class UtilityNetwork {
             queue.push(h);
             // feeder: plant center -> its street hookup (drawn thick, like a header main)
             const s = streets[h];
-            seg(trunks, wx(plant.cx), wz(plant.cz), wx(s.x), wz(plant.cz), u.depth, u.r * 1.2);
-            seg(trunks, wx(s.x), wz(plant.cz), wx(s.x), wz(s.z), u.depth, u.r * 1.2);
+            seg(trunks, P(wx(plant.cx), wz(plant.cz), u.depth), P(wx(s.x), wz(plant.cz), u.depth), u.r * 1.2);
+            seg(trunks, P(wx(s.x), wz(plant.cz), u.depth), P(wx(s.x), wz(s.z), u.depth), u.r * 1.2);
           }
         }
         if (plantHooks.length === 0) {
           // the plant itself is off-grid — flag it
+          const gy = this.mode.site.sample(wx(plant.cx), wz(plant.cz));
           const flag = new THREE.CylinderGeometry(0.35, 0.35, 4.5, 6);
-          flag.translate(wx(plant.cx), 2.25, wz(plant.cz));
+          flag.translate(wx(plant.cx), gy + 2.25, wz(plant.cz));
           alerts.push(flag);
         }
       }
@@ -230,26 +236,28 @@ export class UtilityNetwork {
           this.unconnected++;
           this.missing.push({ defId: b.defId, utility: u.key });
           const near = hooks[0];
+          const gy = this.mode.site.sample(bx, bz);
           const fx = bx + (uIdx - 1.5) * 0.9;
           if (near !== undefined) {
             const s = streets[near];
-            seg(alerts, bx, bz, wx(s.x), bz, u.depth, u.r * 0.75);
-            seg(alerts, wx(s.x), bz, wx(s.x), wz(s.z), u.depth, u.r * 0.75);
+            seg(alerts, P(bx, bz, u.depth), P(wx(s.x), bz, u.depth), u.r * 0.75);
+            seg(alerts, P(wx(s.x), bz, u.depth), P(wx(s.x), wz(s.z), u.depth), u.r * 0.75);
           }
           const flag = new THREE.CylinderGeometry(0.22, 0.22, 3.5 - u.depth, 6);
-          flag.translate(fx, u.depth + (3.5 - u.depth) / 2, bz);
+          flag.translate(fx, gy + u.depth + (3.5 - u.depth) / 2, bz);
           alerts.push(flag);
           const knob = new THREE.SphereGeometry(0.55, 8, 6);
-          knob.translate(fx, 3.5, bz);
+          knob.translate(fx, gy + 3.5, bz);
           alerts.push(knob);
           continue;
         }
         // service stub: building center -> street entry (L-shaped) + riser
         const s = streets[entry];
-        seg(stubs, bx, bz, wx(s.x), bz, u.depth, u.r * 0.75);
-        seg(stubs, wx(s.x), bz, wx(s.x), wz(s.z), u.depth, u.r * 0.75);
+        seg(stubs, P(bx, bz, u.depth), P(wx(s.x), bz, u.depth), u.r * 0.75);
+        seg(stubs, P(wx(s.x), bz, u.depth), P(wx(s.x), wz(s.z), u.depth), u.r * 0.75);
+        const gy = this.mode.site.sample(bx, bz);
         const riser = new THREE.CylinderGeometry(u.r * 0.75, u.r * 0.75, -u.depth + 0.3, 6);
-        riser.translate(bx, u.depth / 2, bz);
+        riser.translate(bx, gy + u.depth / 2, bz);
         stubs.push(riser);
         // walk the BFS tree back to the plant
         let i = entry;
@@ -260,7 +268,7 @@ export class UtilityNetwork {
           usedEdges.add(key);
           const a = streets[i];
           const c = streets[p];
-          seg(trunks, wx(a.x), wz(a.z), wx(c.x), wz(c.z), u.depth, u.r);
+          seg(trunks, P(wx(a.x), wz(a.z), u.depth), P(wx(c.x), wz(c.z), u.depth), u.r);
           i = p;
         }
       }

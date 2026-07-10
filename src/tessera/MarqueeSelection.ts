@@ -274,7 +274,7 @@ export class MarqueeSelection {
     const { dx, dz } = this.carryDelta;
     this.carryValid = this.carrying.every((e) => {
       const def = getModule(e.placed.defId);
-      return def && grid.canPlace(def, e.placed.x + dx, e.placed.z + dz, e.placed.rot);
+      return def && this.mode.canPlaceModule(def, e.placed.x + dx, e.placed.z + dz, e.placed.rot);
     });
     this.carryGhost.position.set(
       (this.carryRef.x + dx - grid.width / 2) * CELL_SIZE,

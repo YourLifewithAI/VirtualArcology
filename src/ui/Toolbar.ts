@@ -13,6 +13,7 @@ export interface ToolbarActions {
   toggleFood(): boolean;
   toggleTerrain(): boolean;
   toggleSelect(): boolean;
+  toggleLandform(): boolean;
   newSite(): void;
   locate(): void;
   cycleTheme(): void;
@@ -73,7 +74,10 @@ export class Toolbar {
     }, 'Food web — green links between interconnected food buildings, amber flags on isolated ones');
     add('terrain', 'Terrain', () => {
       this.btns.terrain.classList.toggle('active', actions.toggleTerrain());
-    }, 'See through the site pad to the ground underneath (buildings keep their own pads)');
+    }, 'Recolor the pad as biome ground (buildings keep their own pads)');
+    add('landform', '⛰ Landform', () => {
+      this.btns.landform.classList.toggle('active', actions.toggleLandform());
+    }, 'Shape the land under the city: raise, lower, level, smooth, lakes — buildings hide while you work');
     add('new', 'New site', () => actions.newSite(), 'Drag out a fresh site footprint');
     add('locate', '📍 Locate', () => actions.locate(), 'Set a real location: climate picks the region, real elevation shapes the terrain');
     sep();
@@ -97,7 +101,7 @@ export class Toolbar {
   }
 
   /** Sync a toggle button's active state with app state restored at boot. */
-  setToggleState(key: 'pipes' | 'roads' | 'food' | 'terrain' | 'select', on: boolean): void {
+  setToggleState(key: 'pipes' | 'roads' | 'food' | 'terrain' | 'select' | 'landform', on: boolean): void {
     this.btns[key]?.classList.toggle('active', on);
   }
 
@@ -105,7 +109,7 @@ export class Toolbar {
     this.btns.tessera.classList.toggle('active', this.mode === 'tessera');
     this.btns.arcology.classList.toggle('active', this.mode === 'arcology');
     const inTessera = this.mode === 'tessera';
-    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'new', 'locate', 'theme', 'biome', 'music', 'save', 'load', 'clear']) {
+    for (const key of ['walk', 'select', 'undo', 'redo', 'grid', 'ledger', 'pipes', 'roads', 'food', 'terrain', 'landform', 'new', 'locate', 'theme', 'biome', 'music', 'save', 'load', 'clear']) {
       this.btns[key].style.display = inTessera || key === 'walk' || key === 'theme' || key === 'music' ? '' : 'none';
     }
     this.btns.undo.disabled = !this.actions.canUndo();

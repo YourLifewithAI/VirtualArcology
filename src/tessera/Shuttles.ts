@@ -62,6 +62,11 @@ export class Shuttles {
     mode.scene.add(this.mesh);
   }
 
+  /** Landform edit mode hides the fleet. */
+  setVisible(v: boolean): void {
+    this.mesh.visible = v;
+  }
+
   private key(x: number, z: number): number {
     return z * this.mode.grid.width + x;
   }
@@ -214,7 +219,7 @@ export class Shuttles {
 
       q.setFromAxisAngle(up, s.yaw);
       m.makeRotationFromQuaternion(q);
-      m.setPosition(x + ox, 0.12, z + oz);
+      m.setPosition(x + ox, this.mode.site.sample(x + ox, z + oz) + 0.12, z + oz);
       this.mesh.setMatrixAt(i, m);
     });
     this.mesh.instanceMatrix.needsUpdate = true;

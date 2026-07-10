@@ -124,17 +124,22 @@ export class FoodWeb {
       const az = world(a.cz, halfD);
       const bx = world(b.cx, halfW);
       const bz = world(b.cz, halfD);
+      const ay = this.mode.site.sample(ax, az);
+      const by = this.mode.site.sample(bx, bz);
       const len = Math.hypot(bx - ax, bz - az);
       if (len < 0.1) continue;
-      const seg = new THREE.CylinderGeometry(0.55, 0.55, len, 6);
-      seg.rotateX(Math.PI / 2);
-      seg.rotateY(-Math.atan2(bz - az, bx - ax) + Math.PI / 2);
-      seg.translate((ax + bx) / 2, LINK_Y, (az + bz) / 2);
+      const va = new THREE.Vector3(ax, ay + LINK_Y, az);
+      const vb = new THREE.Vector3(bx, by + LINK_Y, bz);
+      const dir = vb.clone().sub(va);
+      const seg = new THREE.CylinderGeometry(0.55, 0.55, dir.length(), 6);
+      seg.translate(0, dir.length() / 2, 0);
+      seg.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize()));
+      seg.translate(va.x, va.y, va.z);
       linkGeoms.push(seg);
       // posts at both ends so links visibly land on their buildings
-      for (const [px, pz] of [[ax, az], [bx, bz]] as const) {
+      for (const [px, py, pz] of [[ax, ay, az], [bx, by, bz]] as const) {
         const post = new THREE.CylinderGeometry(0.3, 0.3, LINK_Y, 6);
-        post.translate(px, LINK_Y / 2, pz);
+        post.translate(px, py + LINK_Y / 2, pz);
         linkGeoms.push(post);
       }
     }
@@ -145,6 +150,7 @@ export class FoodWeb {
       const z = world(n.cz, halfD);
       if (sizes.get(find(i)) === 1) {
         // isolated: amber halo ring + flag riser
+        const gy = this.mode.site.sample(x, z);
         const extent = Math.max(n.x1 - n.x0, n.z1 - n.z0) + 1;
         const ring = new THREE.RingGeometry(
           Math.max(4, (extent * CELL_SIZE) / 2 - 1),
@@ -152,13 +158,13 @@ export class FoodWeb {
           24,
         )
           .rotateX(-Math.PI / 2)
-          .translate(x, 0.34, z);
+          .translate(x, gy + 0.44, z);
         isolatedGeoms.push(ring);
         const flag = new THREE.CylinderGeometry(0.35, 0.35, n.h + 6, 6);
-        flag.translate(x, (n.h + 6) / 2, z);
+        flag.translate(x, gy + (n.h + 6) / 2, z);
         isolatedGeoms.push(flag);
         const knob = new THREE.SphereGeometry(1.2, 8, 6);
-        knob.translate(x, n.h + 6, z);
+        knob.translate(x, gy + n.h + 6, z);
         isolatedGeoms.push(knob);
       }
     }

@@ -124,22 +124,27 @@ export class Terrain {
   }
 
   /**
-   * Engineered height: pad graded flat (smooth 220 m skirt), highway and
-   * rail corridors in cut-and-fill bands blending back over ~70 m.
+   * Engineered height: pad graded flat (smooth skirt), highway/rail/spur
+   * corridors in cut-and-fill bands. Inner flat zones are wider than the
+   * render mesh's vertex spacing so interpolated triangles can never rise
+   * over a road between vertices.
    */
   heightAt(x: number, z: number): number {
     const h = this.rawHeight(x, z);
-    // distance outside the pad rectangle
+    // distance outside the pad rectangle (first 45 m dead flat)
     const dx = Math.max(0, Math.abs(x) - (this.siteHalfX + 12));
     const dz = Math.max(0, Math.abs(z) - (this.siteHalfZ + 12));
-    const padBlend = smoothstep(0, 220, Math.hypot(dx, dz));
-    const hwBlend = smoothstep(14, 84, Math.abs(x - this.highwayX));
-    const railBlend = smoothstep(9, 79, Math.abs(z - this.railZ));
-    return h * Math.min(padBlend, hwBlend, railBlend);
+    const padBlend = smoothstep(45, 280, Math.hypot(dx, dz));
+    const hwBlend = smoothstep(50, 160, Math.abs(x - this.highwayX));
+    const railBlend = smoothstep(45, 150, Math.abs(z - this.railZ));
+    // interchange spur: flat lane from the pad edge to the highway
+    const spurBlend =
+      x > this.siteHalfX - 60 && x < this.highwayX + 70 ? smoothstep(35, 130, Math.abs(z)) : 1;
+    return h * Math.min(padBlend, hwBlend, railBlend, spurBlend);
   }
 
   /** Displaced ground plane with recomputed normals (caller owns disposal). */
-  buildGeometry(size = 6000, segments = 100): THREE.BufferGeometry {
+  buildGeometry(size = 6000, segments = 150): THREE.BufferGeometry {
     const geom = new THREE.PlaneGeometry(size, size, segments, segments);
     geom.rotateX(-Math.PI / 2);
     const pos = geom.getAttribute('position');

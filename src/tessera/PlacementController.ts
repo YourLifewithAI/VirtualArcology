@@ -120,7 +120,7 @@ export class PlacementController {
     );
     edges.renderOrder = 16;
     group.add(edges);
-    group.position.set(center.x, 0.02, center.z);
+    group.position.set(center.x, this.mode.ghostHeight(def, placed.x, placed.z, placed.rot) + 0.02, center.z);
     this.mode.scene.add(group);
     this.selectionBox = group;
   }
@@ -273,11 +273,11 @@ export class PlacementController {
     const ax = cell.x - Math.floor((w - 1) / 2);
     const az = cell.z - Math.floor((d - 1) / 2);
     this.anchor = { x: ax, z: az };
-    this.valid = grid.canPlace(def, ax, az, this.rotation);
+    this.valid = this.mode.canPlaceModule(def, ax, az, this.rotation);
 
     const cx = (ax + w / 2 - grid.width / 2) * CELL_SIZE;
     const cz = (az + d / 2 - grid.depth / 2) * CELL_SIZE;
-    this.ghost.position.set(cx, 0.05, cz);
+    this.ghost.position.set(cx, this.mode.ghostHeight(def, ax, az, this.rotation) + 0.05, cz);
     this.ghost.visible = true;
     this.setGhostMaterial(this.valid);
   }
@@ -401,7 +401,7 @@ export class PlacementController {
       z: Math.round(placed.z + d / 2 - nf.d / 2),
     };
     this.mode.removePlacement(index);
-    if (!this.mode.grid.canPlace(def, to.x, to.z, to.rot)) {
+    if (!this.mode.canPlaceModule(def, to.x, to.z, to.rot)) {
       this.mode.restorePlacement(index, placed);
       this.inspect(index);
       return false;

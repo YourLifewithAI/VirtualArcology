@@ -125,6 +125,11 @@ export class Robots {
     mode.scene.add(this.mesh);
   }
 
+  /** Landform edit mode hides the fleet. */
+  setVisible(v: boolean): void {
+    this.mesh.visible = v;
+  }
+
   /** Which robot (if any) is under this ray? For click-to-inspect. */
   pick(raycaster: THREE.Raycaster): RobotInfo | null {
     if (this.mesh.count === 0) return null;
@@ -351,7 +356,7 @@ export class Robots {
 
       q.setFromAxisAngle(up, robot.yaw);
       m.makeRotationFromQuaternion(q);
-      m.setPosition(x, 0.15, z);
+      m.setPosition(x, this.mode.site.sample(x, z) + 0.15, z);
       this.mesh.setMatrixAt(i, m);
     });
     this.mesh.instanceMatrix.needsUpdate = true;

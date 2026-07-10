@@ -28,6 +28,7 @@ import { classifyBiome, fetchClimate, fetchElevationGrid, geocode } from './core
 import { MarqueeSelection } from './tessera/MarqueeSelection';
 import { Robots, type RobotInfo } from './tessera/Robots';
 import { Shuttles } from './tessera/Shuttles';
+import { TerrainEditor } from './tessera/TerrainEditor';
 import { Clouds } from './tessera/Clouds';
 
 const params = new URLSearchParams(location.search);
@@ -82,6 +83,14 @@ const marquee = new MarqueeSelection(app, tessera, placement);
 marquee.onToast = (msg) => hud.showToast(msg);
 marquee.onChanged = () => {
   toolbar.setToggleState('select', marquee.active);
+  updateHint();
+};
+const landform = new TerrainEditor(app, tessera, placement, uiRoot);
+landform.onToast = (msg) => hud.showToast(msg);
+landform.onChanged = () => {
+  toolbar.setToggleState('landform', landform.active);
+  robots.setVisible(!landform.active);
+  shuttles.setVisible(!landform.active);
   updateHint();
 };
 
@@ -307,7 +316,7 @@ function startWalk(): void {
   placement.select(null);
   placement.inspect(null);
   placement.suspended = true;
-  walkthrough.enter(new GridCollision(tessera.grid), spawn);
+  walkthrough.enter(new GridCollision(tessera.grid, (x, z) => tessera.site.sample(x, z)), spawn);
 }
 
 walkthrough.onStateChanged = (state) => {
@@ -418,8 +427,18 @@ const toolbar = new Toolbar(uiRoot, {
   toggleSelect: () => {
     if (!marquee.active && walkthrough.state !== 'off') walkthrough.exit();
     if (!marquee.active && siteDefiner.active) siteDefiner.exit();
+    if (!marquee.active && landform.active) landform.setActive(false);
     marquee.setActive(!marquee.active);
     return marquee.active;
+  },
+  toggleLandform: () => {
+    if (!landform.active) {
+      if (walkthrough.state !== 'off') walkthrough.exit();
+      if (marquee.active) marquee.setActive(false);
+      if (siteDefiner.active) siteDefiner.exit();
+    }
+    landform.setActive(!landform.active);
+    return landform.active;
   },
   locate: () => openLocateDialog(),
   cycleTheme: () => {
@@ -464,7 +483,9 @@ placement.onStateChanged = () => {
 };
 
 function updateHint(): void {
-  if (marquee.active) {
+  if (landform.active) {
+    hud.setHint('<b>Drag</b> to shape the land · pick a tool in the Landform panel · scroll zooms · <b>Esc</b> exits');
+  } else if (marquee.active) {
     if (marquee.isCarrying) {
       hud.setHint('<b>Click</b> drop the block (green = fits) · <b>Esc</b> put it back');
     } else if (marquee.count > 0) {
@@ -484,7 +505,8 @@ updateHint();
 
 tessera.registerAnimatable({ update: (dt) => walkthrough.update(dt) });
 tessera.registerAnimatable(robots);
-tessera.registerAnimatable(new Shuttles(tessera));
+const shuttles = new Shuttles(tessera);
+tessera.registerAnimatable(shuttles);
 tessera.registerAnimatable(new Clouds(tessera.scene));
 
 // ---- boot layout -----------------------------------------------------------
@@ -540,7 +562,7 @@ app.onFirstFrame(() => {
   marquee,
   robots,
   stats: () => app.stats(),
-  serialize: () => serializeLayout(tessera.grid),
+  serialize: () => serializeLayout(tessera.grid, tessera.site),
   loadLayout: (json: unknown) => {
     persistence.applyLayout(parseLayout(json));
   },
