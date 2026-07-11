@@ -530,6 +530,54 @@
   border-style: dashed;
 }
 
+/* ---- landform (terrain edit) panel ---- */
+.va-landform {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 56px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  pointer-events: auto;
+  backdrop-filter: blur(6px);
+  font-size: 12px;
+  text-align: center;
+  z-index: 25;
+}
+
+.va-landform b {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.va-landform .tools {
+  display: flex;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.va-landform label {
+  display: block;
+  color: var(--text-dim);
+  margin: 4px 0;
+}
+
+.va-landform input[type='range'] {
+  vertical-align: middle;
+  width: 140px;
+}
+
+.va-landform .note {
+  font-size: 10px;
+  color: var(--text-dim);
+  opacity: 0.75;
+  margin-top: 4px;
+}
+
 /* ---- robot inspection card ---- */
 .va-robotcard {
   position: absolute;

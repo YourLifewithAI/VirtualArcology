@@ -124,8 +124,11 @@ export class RoadNetwork {
     const halfW = grid.width / 2;
     const halfD = grid.depth / 2;
     for (const [k, c] of streets) {
+      const cx = (c.x + 0.5 - halfW) * CELL_SIZE;
+      const cz = (c.z + 0.5 - halfD) * CELL_SIZE;
+      const gy = this.mode.site.sample(cx, cz);
       const quad = new THREE.PlaneGeometry(CELL_SIZE - 1.2, CELL_SIZE - 1.2).rotateX(-Math.PI / 2);
-      quad.translate((c.x + 0.5 - halfW) * CELL_SIZE, 0.32, (c.z + 0.5 - halfD) * CELL_SIZE);
+      quad.translate(cx, gy + 0.42, cz);
       if (reached.has(k)) {
         connected.push(quad);
       } else {
@@ -133,7 +136,7 @@ export class RoadNetwork {
         this.disconnected++;
         // flag riser so islands read from any camera angle
         const flag = new THREE.CylinderGeometry(0.2, 0.2, 3.2, 6);
-        flag.translate((c.x + 0.5 - halfW) * CELL_SIZE, 1.6, (c.z + 0.5 - halfD) * CELL_SIZE);
+        flag.translate(cx, gy + 1.6, cz);
         islands.push(flag);
       }
     }

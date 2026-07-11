@@ -11,11 +11,20 @@ import { Rng } from '../core/Rng';
 import { buildModuleGroup, type InstanceRequest } from '../core/geo';
 import { getModule } from '../catalog/ModuleCatalog';
 import { clearInstancedPartCache } from '../catalog/parts';
-import { BiomeLayer } from './BiomeLayer';
+import { BiomeLayer, BIOMES } from './BiomeLayer';
 import { FoodWeb } from './FoodWeb';
 import { RegionalCorridors } from './RegionalCorridors';
+import { SiteTerrain } from './SiteTerrain';
 import { Terrain, type HeightGrid } from './Terrain';
-import { CELL_SIZE, Grid, type PlacedModule } from './Grid';
+import type { ModuleDef } from '../catalog/types';
+
+/** Modules that conform to slopes instead of grading a flat pad. */
+const CONFORMING = new Set(['street', 'park', 'tree-row', 'bioswale', 'orchard']);
+/** Max corner-height range a building tolerates before placement is refused. */
+const BUILDING_TOLERANCE = 2.5;
+/** Conforming modules ride slopes up to this rise per cell of footprint. */
+const CONFORM_TOLERANCE_PER_CELL = 3.5;
+import { CELL_SIZE, Grid, rotatedFootprint, type PlacedModule } from './Grid';
 import { InstancePools } from './InstancePools';
 import { RoadNetwork } from './RoadNetwork';
 import { UtilityNetwork } from './UtilityNetwork';
@@ -37,7 +46,13 @@ export class TesseraMode implements Mode {
   private biomes: BiomeLayer;
   private corridors: RegionalCorridors;
   readonly terrain = new Terrain();
+  /** Editable landform under the site itself (corner heightfield + lakes). */
+  readonly site: SiteTerrain;
   private slab: THREE.Mesh | null = null;
+  private lattice: THREE.LineSegments | null = null;
+  private waterMesh: THREE.Mesh | null = null;
+  /** Suppresses per-placement ground rebuilds during bulk loads. */
+  private batchingGround = false;
   /** Active regional archetype (BIOMES key). */
   biome = 'temperate';
   /** Human-readable place name when a real location is set. */
@@ -72,6 +87,7 @@ export class TesseraMode implements Mode {
 
   constructor(private app: App, gridSize = DEFAULT_GRID) {
     this.grid = new Grid(gridSize, gridSize);
+    this.site = new SiteTerrain(gridSize, gridSize);
     this.pools = new InstancePools(this.scene);
     this.utilities = new UtilityNetwork(this);
     this.roads = new RoadNetwork(this);
@@ -115,42 +131,124 @@ export class TesseraMode implements Mode {
       }
     }
     this.groundMeshes = [];
-    const siteW = gridW * CELL_SIZE;
-    const siteD = gridD * CELL_SIZE;
 
     this.terrain.setSite(gridW, gridD);
     this.biomes.rebuild(this.biome, gridW, gridD, this.scene.fog as THREE.Fog);
     this.corridors.rebuild(gridW, gridD);
 
+    // pad surface: a heightfield mesh whose vertices sit exactly on cell corners
     const slab = new THREE.Mesh(
-      new THREE.BoxGeometry(siteW + 8, 0.2, siteD + 8),
-      new THREE.MeshStandardMaterial({ color: PALETTE.paver, roughness: 0.95 }),
+      this.buildSiteGeometry(),
+      new THREE.MeshStandardMaterial({ roughness: 0.95 }),
     );
-    slab.position.y = -0.1;
     slab.receiveShadow = true;
-    slab.visible = this.groundStyle === 'slab';
     this.slab = slab;
     this.scene.add(slab);
 
-    // rectangle-capable cell lattice
-    const pts: number[] = [];
-    for (let x = 0; x <= gridW; x++) {
-      pts.push(x * CELL_SIZE - siteW / 2, 0.04, -siteD / 2, x * CELL_SIZE - siteW / 2, 0.04, siteD / 2);
-    }
-    for (let z = 0; z <= gridD; z++) {
-      pts.push(-siteW / 2, 0.04, z * CELL_SIZE - siteD / 2, siteW / 2, 0.04, z * CELL_SIZE - siteD / 2);
-    }
-    const latticeGeom = new THREE.BufferGeometry();
-    latticeGeom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
     const gridHelper = new THREE.LineSegments(
-      latticeGeom,
+      this.buildLatticeGeometry(),
       new THREE.LineBasicMaterial({ color: 0x8d8874, transparent: true, opacity: 0.25 }),
     );
     gridHelper.name = 'gridHelper';
     this.scene.add(gridHelper);
+    this.lattice = gridHelper;
 
-    this.groundMeshes = [slab, gridHelper];
+    const water = new THREE.Mesh(
+      this.buildWaterGeometry(),
+      new THREE.MeshStandardMaterial({
+        color: PALETTE.water,
+        transparent: true,
+        opacity: 0.72,
+        roughness: 0.2,
+        metalness: 0.05,
+      }),
+    );
+    water.renderOrder = 4;
+    this.waterMesh = water;
+    this.scene.add(water);
+
+    this.groundMeshes = [slab, gridHelper, water];
+    this.applyGroundStyleColor();
     this.applyUtilityViewToGround();
+  }
+
+  private buildSiteGeometry(): THREE.BufferGeometry {
+    const w = this.grid.width;
+    const d = this.grid.depth;
+    const geom = new THREE.PlaneGeometry(w * CELL_SIZE, d * CELL_SIZE, w, d).rotateX(-Math.PI / 2);
+    const pos = geom.getAttribute('position');
+    // PlaneGeometry vertices are row-major from (-w/2, -d/2)
+    for (let i = 0; i < pos.count; i++) {
+      const cx = Math.round(pos.getX(i) / CELL_SIZE + w / 2);
+      const cz = Math.round(pos.getZ(i) / CELL_SIZE + d / 2);
+      pos.setY(i, this.site.cornerH(cx, cz));
+    }
+    pos.needsUpdate = true;
+    geom.computeVertexNormals();
+    return geom;
+  }
+
+  private buildLatticeGeometry(): THREE.BufferGeometry {
+    const w = this.grid.width;
+    const d = this.grid.depth;
+    const half = (c: number, n: number): number => (c - n / 2) * CELL_SIZE;
+    const pts: number[] = [];
+    const push = (cx0: number, cz0: number, cx1: number, cz1: number): void => {
+      pts.push(
+        half(cx0, w), this.site.cornerH(cx0, cz0) + 0.06, half(cz0, d),
+        half(cx1, w), this.site.cornerH(cx1, cz1) + 0.06, half(cz1, d),
+      );
+    };
+    for (let x = 0; x <= w; x++) for (let z = 0; z < d; z++) push(x, z, x, z + 1);
+    for (let z = 0; z <= d; z++) for (let x = 0; x < w; x++) push(x, z, x + 1, z);
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+    return geom;
+  }
+
+  private buildWaterGeometry(): THREE.BufferGeometry {
+    const w = this.grid.width;
+    const d = this.grid.depth;
+    const pts: number[] = [];
+    for (let cz = 0; cz < d; cz++) {
+      for (let cx = 0; cx < w; cx++) {
+        if (!this.site.isWater(cx, cz)) continue;
+        const y = this.site.waterLevel(cx, cz);
+        const x0 = (cx - w / 2) * CELL_SIZE;
+        const z0 = (cz - d / 2) * CELL_SIZE;
+        pts.push(x0, y, z0, x0, y, z0 + CELL_SIZE, x0 + CELL_SIZE, y, z0);
+        pts.push(x0 + CELL_SIZE, y, z0, x0, y, z0 + CELL_SIZE, x0 + CELL_SIZE, y, z0 + CELL_SIZE);
+      }
+    }
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pts), 3));
+    geom.computeVertexNormals();
+    return geom;
+  }
+
+  /** Re-displace the pad, lattice, and water after any landform change. */
+  refreshSiteGround(): void {
+    if (this.batchingGround) return;
+    if (this.slab) {
+      this.slab.geometry.dispose();
+      this.slab.geometry = this.buildSiteGeometry();
+    }
+    if (this.lattice) {
+      this.lattice.geometry.dispose();
+      this.lattice.geometry = this.buildLatticeGeometry();
+    }
+    if (this.waterMesh) {
+      this.waterMesh.geometry.dispose();
+      this.waterMesh.geometry = this.buildWaterGeometry();
+    }
+  }
+
+  private applyGroundStyleColor(): void {
+    if (!this.slab) return;
+    const meadow = BIOMES[this.biome]?.meadow ?? 0x9dae6e;
+    (this.slab.material as THREE.MeshStandardMaterial).color.setHex(
+      this.groundStyle === 'slab' ? PALETTE.paver : meadow,
+    );
   }
 
   /** Swap the regional archetype (meadow, fog, off-site scatter). Visual only. */
@@ -158,6 +256,7 @@ export class TesseraMode implements Mode {
     this.biome = name;
     this.terrain.setProcedural(name); // no-op while real elevation is loaded
     this.biomes.rebuild(name, this.grid.width, this.grid.depth, this.scene.fog as THREE.Fog);
+    this.applyGroundStyleColor();
   }
 
   /**
@@ -247,16 +346,60 @@ export class TesseraMode implements Mode {
     return { clusters: this.foodWeb.clusters, integrated: this.foodWeb.integrated, isolated: this.foodWeb.isolated };
   }
 
-  /** 'terrain' hides the paver site pad so unused cells show the biome ground. */
+  /** 'terrain' recolors the pad to the biome ground so unused cells read as land. */
   setGroundStyle(style: 'slab' | 'terrain'): void {
     this.groundStyle = style;
-    if (this.slab) this.slab.visible = style === 'slab';
+    this.applyGroundStyleColor();
+  }
+
+  /** Landform edit mode hides everything but the land itself. */
+  setBuildingsVisible(v: boolean): void {
+    for (const g of this.moduleGroups.values()) g.visible = v;
+    this.pools.setVisible(v && !this.utilityView);
+  }
+
+  /** Re-seat every placed module on the (possibly regraded) ground. */
+  refreshPlacementTransforms(): void {
+    for (const [index, group] of this.moduleGroups) {
+      const placed = this.grid.placements[index];
+      if (!placed) continue;
+      this.placementWorldMatrix(placed).decompose(group.position, group.quaternion, group.scale);
+    }
+    this.rebuildInstances();
+  }
+
+  /**
+   * After a landform edit: delete placements whose ground is now too steep
+   * or flooded (the deal the editor states up front), re-seat the rest.
+   * Returns how many were removed.
+   */
+  validatePlacementsAfterTerrain(): number {
+    let removed = 0;
+    for (const { placed, index } of this.grid.activePlacements()) {
+      const def = getModule(placed.defId);
+      if (!def) continue;
+      const { w, d } = rotatedFootprint(def, placed.rot);
+      const f = this.site.footprint(placed.x, placed.z, w, d);
+      const range = f.max - f.min;
+      const ok =
+        !f.water &&
+        (CONFORMING.has(placed.defId)
+          ? range <= CONFORM_TOLERANCE_PER_CELL * Math.max(w, d)
+          : range <= BUILDING_TOLERANCE);
+      if (!ok) {
+        this.removePlacement(index);
+        removed++;
+      }
+    }
+    this.refreshPlacementTransforms();
+    return removed;
   }
 
   /** Replace the site with an empty grid of the given cell dimensions. */
   resizeGrid(w: number, d: number): void {
     this.clearAll();
     this.grid = new Grid(w, d);
+    this.site.reset(w, d);
     this.buildGround(w, d);
     const ext = (Math.max(w, d) * CELL_SIZE) / 2 + 60;
     this.sun.shadow.camera.left = -ext;
@@ -330,11 +473,12 @@ export class TesseraMode implements Mode {
 
   // -- placement management --------------------------------------------------
 
-  /** Place a module (assumes canPlace was checked). Returns placement index. */
+  /** Place a module (assumes canPlaceModule was checked). Returns placement index. */
   addPlacement(placed: PlacedModule): number {
     const def = getModule(placed.defId);
     if (!def) throw new Error(`Unknown module: ${placed.defId}`);
     const index = this.grid.place(def, placed);
+    this.gradeForPlacement(placed);
     this.spawnGroup(index, placed);
     this.rebuildInstances();
     this.notifyLayoutChanged();
@@ -362,6 +506,7 @@ export class TesseraMode implements Mode {
   restorePlacement(index: number, placed: PlacedModule): void {
     const def = getModule(placed.defId)!;
     this.grid.restore(def, index, placed);
+    this.gradeForPlacement(placed);
     this.spawnGroup(index, placed);
     this.rebuildInstances();
     this.notifyLayoutChanged();
@@ -386,6 +531,7 @@ export class TesseraMode implements Mode {
 
   loadPlacements(placements: PlacedModule[]): void {
     this.clearAll();
+    this.batchingGround = true;
     for (const p of placements) {
       const def = getModule(p.defId);
       if (!def) {
@@ -397,8 +543,11 @@ export class TesseraMode implements Mode {
         continue;
       }
       const index = this.grid.place(def, p);
+      this.gradeForPlacement(p);
       this.spawnGroup(index, p);
     }
+    this.batchingGround = false;
+    this.refreshSiteGround();
     this.rebuildInstances();
     this.notifyLayoutChanged();
   }
@@ -406,10 +555,49 @@ export class TesseraMode implements Mode {
   placementWorldMatrix(placed: PlacedModule): THREE.Matrix4 {
     const def = getModule(placed.defId)!;
     const center = this.grid.placementCenter(def, placed);
+    const { w, d } = rotatedFootprint(def, placed.rot);
+    const f = this.site.footprint(placed.x, placed.z, w, d);
     const m = new THREE.Matrix4();
-    m.makeRotationY((Math.PI / 2) * placed.rot);
-    m.setPosition(center.x, 0, center.z);
+    const qYaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (Math.PI / 2) * placed.rot);
+    if (CONFORMING.has(placed.defId) && f.max - f.min > 0.05) {
+      // ride the slope: fit a plane to the footprint corners
+      const west = (this.site.cornerH(placed.x, placed.z) + this.site.cornerH(placed.x, placed.z + d)) / 2;
+      const east = (this.site.cornerH(placed.x + w, placed.z) + this.site.cornerH(placed.x + w, placed.z + d)) / 2;
+      const north = (this.site.cornerH(placed.x, placed.z) + this.site.cornerH(placed.x + w, placed.z)) / 2;
+      const south = (this.site.cornerH(placed.x, placed.z + d) + this.site.cornerH(placed.x + w, placed.z + d)) / 2;
+      const normal = new THREE.Vector3(-(east - west) / (w * CELL_SIZE), 1, -(south - north) / (d * CELL_SIZE)).normalize();
+      const qTilt = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+      m.makeRotationFromQuaternion(qTilt.multiply(qYaw));
+    } else {
+      m.makeRotationFromQuaternion(qYaw);
+    }
+    m.setPosition(center.x, f.mean, center.z);
     return m;
+  }
+
+  /** Placement validity incl. landform: water blocks, slopes gate by module kind. */
+  canPlaceModule(def: ModuleDef, x: number, z: number, rot: PlacedModule['rot']): boolean {
+    if (!this.grid.canPlace(def, x, z, rot)) return false;
+    const { w, d } = rotatedFootprint(def, rot);
+    const f = this.site.footprint(x, z, w, d);
+    if (f.water) return false;
+    const range = f.max - f.min;
+    return CONFORMING.has(def.id) ? range <= CONFORM_TOLERANCE_PER_CELL * Math.max(w, d) : range <= BUILDING_TOLERANCE;
+  }
+
+  /** Ground height a ghost should hover at for a footprint. */
+  ghostHeight(def: ModuleDef, x: number, z: number, rot: PlacedModule['rot']): number {
+    const { w, d } = rotatedFootprint(def, rot);
+    return this.site.footprint(x, z, w, d).mean;
+  }
+
+  /** Buildings grade a level pad into the slope; conforming modules don't. */
+  private gradeForPlacement(placed: PlacedModule): void {
+    if (CONFORMING.has(placed.defId)) return;
+    const def = getModule(placed.defId)!;
+    const { w, d } = rotatedFootprint(def, placed.rot);
+    this.site.flatten(placed.x, placed.z, w, d);
+    this.refreshSiteGround();
   }
 
   private spawnGroup(index: number, placed: PlacedModule): void {

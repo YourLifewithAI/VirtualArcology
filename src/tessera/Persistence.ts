@@ -10,7 +10,7 @@ export class Persistence {
   constructor(private mode: TesseraMode) {}
 
   download(name = 'tessera-layout.json'): void {
-    const layout = serializeLayout(this.mode.grid);
+    const layout = serializeLayout(this.mode.grid, this.mode.site);
     const blob = new Blob([JSON.stringify(layout, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -42,6 +42,8 @@ export class Persistence {
     if (layout.grid.width !== this.mode.grid.width || layout.grid.depth !== this.mode.grid.depth) {
       this.mode.resizeGrid(layout.grid.width, layout.grid.depth);
     }
+    // land first, buildings second — placements grade pads into this terrain
+    this.mode.site.load(layout.terrain);
     this.mode.loadPlacements(layout.modules);
   }
 
@@ -49,7 +51,7 @@ export class Persistence {
     if (this.autosaveTimer !== null) window.clearTimeout(this.autosaveTimer);
     this.autosaveTimer = window.setTimeout(() => {
       try {
-        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(serializeLayout(this.mode.grid)));
+        localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(serializeLayout(this.mode.grid, this.mode.site)));
       } catch {
         // storage full/blocked — non-fatal
       }

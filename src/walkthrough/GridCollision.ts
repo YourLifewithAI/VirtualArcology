@@ -7,10 +7,13 @@ import { getModule } from '../catalog/ModuleCatalog';
 import type { WalkSurface } from './WalkthroughController';
 
 export class GridCollision implements WalkSurface {
-  constructor(private grid: Grid) {}
+  constructor(
+    private grid: Grid,
+    private heightFn?: (x: number, z: number) => number,
+  ) {}
 
-  groundHeight(): number {
-    return 0;
+  groundHeight(x: number, z: number): number {
+    return this.heightFn?.(x, z) ?? 0;
   }
 
   private solidAt(cx: number, cz: number): boolean {
