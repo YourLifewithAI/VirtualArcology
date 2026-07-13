@@ -571,6 +571,14 @@
   width: 140px;
 }
 
+.va-landform .readout {
+  font-size: 11.5px;
+  color: var(--text);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+  min-height: 14px;
+}
+
 .va-landform .note {
   font-size: 10px;
   color: var(--text-dim);

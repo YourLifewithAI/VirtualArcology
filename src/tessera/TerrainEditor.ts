@@ -13,8 +13,8 @@ import type { TesseraMode } from './TesseraMode';
 const TOOLS: { key: BrushTool; label: string; hint: string }[] = [
   { key: 'raise', label: '⬆ Raise', hint: 'pull the ground up' },
   { key: 'lower', label: '⬇ Lower', hint: 'press the ground down' },
-  { key: 'level', label: '▬ Level', hint: 'drag ground toward the height you first click' },
-  { key: 'smooth', label: '∿ Smooth', hint: 'relax sharp edges' },
+  { key: 'level', label: '▬ Level', hint: 'drag ground toward the elevation you first press on' },
+  { key: 'smooth', label: '∿ Smooth', hint: 'soften sharp edges (keeps the overall height)' },
   { key: 'lake', label: '💧 Lake', hint: 'carve a basin and fill it' },
   { key: 'drain', label: '◌ Drain', hint: 'remove water' },
 ];
@@ -27,6 +27,7 @@ export class TerrainEditor {
   private levelTarget = 0;
   private cursor: THREE.Mesh;
   private panel: HTMLDivElement;
+  private readoutEl: HTMLElement | null = null;
   private raycaster = new THREE.Raycaster();
   private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private pointer = new THREE.Vector2();
@@ -104,7 +105,9 @@ export class TerrainEditor {
         (t) => `<button class="va-btn tool${t.key === this.tool ? ' active' : ''}" data-tool="${t.key}" title="${t.hint}">${t.label}</button>`,
       ).join('')}</div>
       <label>Brush <input type="range" min="1" max="6" step="1" value="${this.radius}" class="radius"/> ${this.radius} cell${this.radius > 1 ? 's' : ''}</label>
-      <div class="note">Drag on the site to paint · buildings on reshaped ground are removed on exit · <b>Esc</b> exits</div>`;
+      <div class="readout">&nbsp;</div>
+      <div class="note">Drag on the site to paint · on exit, drowned or too-steep buildings go, the rest re-grade their pads · <b>Esc</b> exits</div>`;
+    this.readoutEl = this.panel.querySelector('.readout');
     for (const btn of this.panel.querySelectorAll<HTMLButtonElement>('.tool')) {
       btn.onclick = () => {
         this.tool = btn.dataset.tool as BrushTool;
@@ -124,12 +127,25 @@ export class TerrainEditor {
     return this.raycaster.ray.intersectPlane(this.plane, this.hit) ? this.hit : null;
   }
 
+  private fmtElevation(h: number): string {
+    return `${h >= 0 ? '+' : '−'}${Math.abs(h).toFixed(1)} m`;
+  }
+
+  private updateReadout(p: THREE.Vector3): void {
+    if (!this.readoutEl) return;
+    this.readoutEl.textContent =
+      this.painting && this.tool === 'level'
+        ? `Leveling to ${this.fmtElevation(this.levelTarget)}`
+        : `Ground ${this.fmtElevation(this.mode.site.sample(p.x, p.z))}`;
+  }
+
   private onDown(e: PointerEvent): void {
     if (!this.active || e.button !== 0) return;
     const p = this.groundPoint(e);
     if (!p) return;
     this.painting = true;
-    this.levelTarget = this.mode.site.sample(p.x, p.z); // Level tool matches first-click height
+    this.levelTarget = this.mode.site.sample(p.x, p.z); // Level tool matches first-press height
+    this.updateReadout(p);
     this.paint(p);
   }
 
@@ -144,6 +160,7 @@ export class TerrainEditor {
     this.cursor.scale.set(r, 1, r);
     this.cursor.position.set(p.x, this.mode.site.sample(p.x, p.z) + 0.5, p.z);
     this.cursor.visible = true;
+    this.updateReadout(p);
     if (this.painting) {
       const now = performance.now();
       if (now - this.lastPaint > 40) {
