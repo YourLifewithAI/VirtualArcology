@@ -20,8 +20,8 @@ import type { ModuleDef } from '../catalog/types';
 
 /** Modules that conform to slopes instead of grading a flat pad. */
 const CONFORMING = new Set(['street', 'park', 'tree-row', 'bioswale', 'orchard']);
-/** Max corner-height range a building tolerates before placement is refused. */
-const BUILDING_TOLERANCE = 2.5;
+/** Max corner-height range a building auto-grades into before placement is refused. */
+const BUILDING_TOLERANCE = 6;
 /** Conforming modules ride slopes up to this rise per cell of footprint. */
 const CONFORM_TOLERANCE_PER_CELL = 3.5;
 import { CELL_SIZE, Grid, rotatedFootprint, type PlacedModule } from './Grid';
@@ -370,8 +370,10 @@ export class TesseraMode implements Mode {
 
   /**
    * After a landform edit: delete placements whose ground is now too steep
-   * or flooded (the deal the editor states up front), re-seat the rest.
-   * Returns how many were removed.
+   * or flooded (the deal the editor states up front), then re-grade the pads
+   * of surviving buildings the edit disturbed — a building left teetering on
+   * a rim cuts its pad back into the new hillside instead of floating or
+   * sinking at f.mean. Returns how many were removed.
    */
   validatePlacementsAfterTerrain(): number {
     let removed = 0;
@@ -391,6 +393,18 @@ export class TesseraMode implements Mode {
         removed++;
       }
     }
+    this.batchingGround = true;
+    for (const { placed } of this.grid.activePlacements()) {
+      if (CONFORMING.has(placed.defId)) continue;
+      const def = getModule(placed.defId);
+      if (!def) continue;
+      const { w, d } = rotatedFootprint(def, placed.rot);
+      const f = this.site.footprint(placed.x, placed.z, w, d);
+      if (f.max - f.min <= 0.01) continue; // pad untouched by the edit
+      this.site.flattenWithSkirt(placed.x, placed.z, w, d, (cx, cz) => this.isPadCorner(cx, cz));
+    }
+    this.batchingGround = false;
+    this.refreshSiteGround();
     this.refreshPlacementTransforms();
     return removed;
   }
@@ -480,7 +494,8 @@ export class TesseraMode implements Mode {
     const index = this.grid.place(def, placed);
     this.gradeForPlacement(placed);
     this.spawnGroup(index, placed);
-    this.rebuildInstances();
+    // the pad skirt can shift corners under neighbors (streets, orchards) — re-seat everyone
+    this.refreshPlacementTransforms();
     this.notifyLayoutChanged();
     return index;
   }
@@ -508,7 +523,7 @@ export class TesseraMode implements Mode {
     this.grid.restore(def, index, placed);
     this.gradeForPlacement(placed);
     this.spawnGroup(index, placed);
-    this.rebuildInstances();
+    this.refreshPlacementTransforms();
     this.notifyLayoutChanged();
   }
 
@@ -548,7 +563,8 @@ export class TesseraMode implements Mode {
     }
     this.batchingGround = false;
     this.refreshSiteGround();
-    this.rebuildInstances();
+    // later pads' skirts may have shifted ground under earlier-spawned modules
+    this.refreshPlacementTransforms();
     this.notifyLayoutChanged();
   }
 
@@ -596,8 +612,19 @@ export class TesseraMode implements Mode {
     if (CONFORMING.has(placed.defId)) return;
     const def = getModule(placed.defId)!;
     const { w, d } = rotatedFootprint(def, placed.rot);
-    this.site.flatten(placed.x, placed.z, w, d);
+    this.site.flattenWithSkirt(placed.x, placed.z, w, d, (cx, cz) => this.isPadCorner(cx, cz));
     this.refreshSiteGround();
+  }
+
+  /** Corners that belong to some building's graded pad — embankment skirts leave them alone. */
+  private isPadCorner(cx: number, cz: number): boolean {
+    for (let dz = -1; dz <= 0; dz++) {
+      for (let dx = -1; dx <= 0; dx++) {
+        const p = this.grid.placementAt(cx + dx, cz + dz);
+        if (p && !CONFORMING.has(p.defId)) return true;
+      }
+    }
+    return false;
   }
 
   private spawnGroup(index: number, placed: PlacedModule): void {

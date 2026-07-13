@@ -103,6 +103,26 @@ export class SiteTerrain {
   }
 
   /**
+   * Grade a building pad the way a real site cut does: footprint corners go
+   * flat to the pad height, and the ring of corners just outside is pulled
+   * halfway toward it, forming the cut/fill embankment. Corners the caller
+   * marks protected (another building's pad) and lake shores stay put.
+   */
+  flattenWithSkirt(x: number, z: number, fw: number, fd: number, protect?: (cx: number, cz: number) => boolean): number {
+    const pad = this.flatten(x, z, fw, fd);
+    for (let cz = z - 1; cz <= z + fd + 1; cz++) {
+      for (let cx = x - 1; cx <= x + fw + 1; cx++) {
+        const ring = cx === x - 1 || cx === x + fw + 1 || cz === z - 1 || cz === z + fd + 1;
+        if (!ring || cx < 0 || cz < 0 || cx > this.w || cz > this.d) continue;
+        if (protect?.(cx, cz)) continue;
+        if (this.isWater(cx - 1, cz - 1) || this.isWater(cx, cz - 1) || this.isWater(cx - 1, cz) || this.isWater(cx, cz)) continue;
+        this.setCorner(cx, cz, (this.cornerH(cx, cz) + pad) / 2);
+      }
+    }
+    return pad;
+  }
+
+  /**
    * Apply a brush stroke centered on world coords. Radius in cells.
    * Returns true if anything changed.
    */
@@ -139,6 +159,42 @@ export class SiteTerrain {
       return changed;
     }
 
+    if (tool === 'smooth') {
+      // Two passes: relax every painted corner toward its neighbor average
+      // (read from the pre-stroke heights), then redistribute the volume the
+      // relaxation removed, weighted by brush falloff. Plain diffusion leaks
+      // height into the pinned-datum perimeter and unpainted lowland, so an
+      // un-conserved smooth slowly presses the whole landform down — this one
+      // softens edges while the hill keeps its bulk.
+      const touched: { cx: number; cz: number; h: number; next: number; falloff: number }[] = [];
+      for (let cz = Math.ceil(ccz - r); cz <= Math.floor(ccz + r); cz++) {
+        for (let cx = Math.ceil(ccx - r); cx <= Math.floor(ccx + r); cx++) {
+          if (cx <= 0 || cz <= 0 || cx >= this.w || cz >= this.d) continue; // perimeter is pinned anyway
+          const dist = Math.hypot(cx - ccx, cz - ccz);
+          if (dist > r) continue;
+          const falloff = Math.cos(((dist / r) * Math.PI) / 2) ** 2;
+          const h = this.cornerH(cx, cz);
+          const avg =
+            (this.cornerH(cx - 1, cz) + this.cornerH(cx + 1, cz) + this.cornerH(cx, cz - 1) + this.cornerH(cx, cz + 1)) / 4;
+          touched.push({ cx, cz, h, next: h + (avg - h) * Math.min(1, falloff * 1.4), falloff });
+        }
+      }
+      let lost = 0;
+      let weight = 0;
+      for (const t of touched) {
+        lost += t.h - t.next;
+        weight += t.falloff;
+      }
+      for (const t of touched) {
+        const v = t.next + (weight > 1e-6 ? (lost * t.falloff) / weight : 0);
+        if (Math.abs(v - t.h) > 1e-4) {
+          this.setCorner(t.cx, t.cz, v);
+          changed = true;
+        }
+      }
+      return changed;
+    }
+
     for (let cz = Math.ceil(ccz - r); cz <= Math.floor(ccz + r); cz++) {
       for (let cx = Math.ceil(ccx - r); cx <= Math.floor(ccx + r); cx++) {
         if (cx < 0 || cz < 0 || cx > this.w || cz > this.d) continue;
@@ -150,15 +206,6 @@ export class SiteTerrain {
         if (tool === 'raise') next = h + 1.6 * falloff;
         else if (tool === 'lower') next = h - 1.6 * falloff;
         else if (tool === 'level') next = h + (levelTarget - h) * Math.min(1, falloff * 1.6);
-        else if (tool === 'smooth') {
-          const avg =
-            (this.cornerH(Math.max(0, cx - 1), cz) +
-              this.cornerH(Math.min(this.w, cx + 1), cz) +
-              this.cornerH(cx, Math.max(0, cz - 1)) +
-              this.cornerH(cx, Math.min(this.d, cz + 1))) /
-            4;
-          next = h + (avg - h) * Math.min(1, falloff * 1.4);
-        }
         if (Math.abs(next - h) > 1e-4) {
           this.setCorner(cx, cz, next);
           changed = true;

@@ -92,15 +92,18 @@ boundary, and saved layouts carry their footprint with them. A compass sits
 top-right so north stays findable (drag it anywhere).
 
 **⛰ Landform** opens the terrain layer, SimCity-style: buildings hide and
-the land itself takes the brush — raise, lower, level, smooth, carve
-**lakes**, or drain them (site perimeter stays pinned to the regional
-datum). On exit, anything now standing on too-steep or flooded ground is
-removed — the mode says so up front — and everything else re-seats on the
-new grades. Buildings **grade a level pad** into whatever slope you place
-them on (too steep = red ghost); **streets, orchards, parks, and bioswales
-conform to slopes** instead, robots and shuttles drive the grades, pipes
-follow the ground profile underground, and the walkthrough climbs the
-hills. Terrain and lakes save/load with the layout.
+the land itself takes the brush — raise, lower, level (to the elevation you
+first press on, shown live in the panel), smooth (volume-preserving: it
+softens edges without deflating the hill), carve **lakes**, or drain them
+(site perimeter stays pinned to the regional datum). On exit, anything now
+standing on too-steep or flooded ground is removed — the mode says so up
+front — and every surviving building **re-grades its pad into the new
+land** before re-seating, so nothing floats or half-buries at the edit's
+rim. Buildings **auto-grade a level pad with embankment skirts** into
+slopes up to ~6 m of relief (steeper = red ghost); **streets, orchards,
+parks, and bioswales conform to slopes** instead, robots and shuttles drive
+the grades, pipes follow the ground profile underground, and the
+walkthrough climbs the hills. Terrain and lakes save/load with the layout.
 
 **📍 Locate** makes the site a real place: type a city or "lat, lon" and
 the climate record (Open-Meteo ERA5) picks the matching region archetype,
